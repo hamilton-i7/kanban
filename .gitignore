@@ -1,0 +1,95 @@
+# Avoid accidental upload of the Sketch and Figma design files
+#####################################################
+## Please do not remove lines 5 and 6 - thanks! 🙂 ##
+#####################################################
+*.sketch
+*.fig
+
+# Avoid accidental XD upload if you convert the design file
+###############################################
+## Please do not remove line 12 - thanks! 🙂 ##
+###############################################
+*.xd
+
+# Avoid your project being littered with annoying .DS_Store files!
+.DS_Store
+.prettierignore
+
+# .gitignore
+
+# Python-related files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyo
+*.pyc
+*.pyo
+*.pyz
+*.pyw
+*.pywx
+*.pywz
+*.pyz
+*.pyzw
+*.pyw
+*.pywz
+*.pyz
+*.pyzw
+*.pyo
+*.pyc
+*.pyo
+*.pyc
+
+# Virtual environment
+venv/
+env/
+*.env/
+
+kanban-backend/Lib
+kanban-backend/Scripts
+
+# Virtual environment configuration
+pyvenv.cfg
+
+# Compiled files
+*.pyc
+*.pyo
+*.pyd
+
+# Python bytecode
+__pycache__/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDE specific
+.idea/
+.vscode/
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+*.sqlite3
+*.psql
+
+# Temporary files
+*.swp
+*.swo
+*.swn
+
+# Local configuration file (e.g., secrets.py)
+local_settings.py
+
+# Ignore generated files and folders from Django
+media/
+staticfiles/
+
+# PostgreSQL
+*.backup
+*.bak
+*.pg_dump
+*.pg_dumpall
+*.sql
+*.sql.gz
