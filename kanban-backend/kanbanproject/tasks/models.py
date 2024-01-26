@@ -1,8 +1,10 @@
 from django.db import models
 
+from .constants import BOARD_NAME_MAX_LENGTH
+
 # Create your models here.
 class Board(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=BOARD_NAME_MAX_LENGTH)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
