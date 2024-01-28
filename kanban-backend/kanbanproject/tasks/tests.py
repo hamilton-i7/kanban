@@ -1,10 +1,12 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
-from rest_framework.exceptions import ValidationError, APIException
+from rest_framework.exceptions import ValidationError
 
 from .models import Board
 from .serializers import BoardSerializer
-from .constants import BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND
+from .constants import BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED
 
 # Create your tests here.
 class BoardAPITests(APITestCase):
@@ -46,8 +48,18 @@ class BoardAPITests(APITestCase):
         self.assertIn('name', response.data)
         self.assertEqual(response.data['name'], data['name']) 
 
+        # Assert the board is actually stored in the database
         created_board = Board.objects.get(id=response.data['id']) 
         self.assertEqual(created_board.name, data['name'])
+
+    def test_read_only_field_post(self):
+        client = APIClient()        
+        data = {'name': 'Sample Board', 'created_at': timezone.now() + timedelta(days=2)}        
+        response = client.post(f'/tasks/boards/', data=data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['name'], data['name'])
+        self.assertNotEqual(response.data['created_at'], data['created_at'])
 
     def test_list_boards(self):
         client = APIClient()
@@ -73,9 +85,12 @@ class BoardAPITests(APITestCase):
         board = Board.objects.create(name='Sample Board')
         response = client.get(f'/tasks/boards/{board.id}/')
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_board_success_fields(self):
+        """
+        Assert the retrieved board is displaying all the necessary data.
+        """
         client = APIClient()
         board = Board.objects.create(name='Sample Board')
         response = client.get(f'/tasks/boards/{board.id}/')
@@ -91,3 +106,79 @@ class BoardAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data['error'], BOARD_NOT_FOUND)
+
+    def test_update_board_not_found(self):
+        client = APIClient()
+        response = client.patch('/tasks/boards/0/')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], BOARD_NOT_FOUND)
+
+    def test_name_length_exceeded_patch(self):
+        board = Board.objects.create(name='Sample Board')
+        data = {'name': 'A' * (Board._meta.get_field('name').max_length + 1)}
+        serializer = BoardSerializer(data=data)
+        response = self.client.patch(f'/tasks/boards/{board.id}/', data=data, format='json')
+        
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)
+
+        self.assertEqual(context.exception.detail['name'][0], BOARD_NAME_MAX_LENGTH_ERROR)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_name_blank_patch(self):
+        board = Board.objects.create(name='Sample Board')
+        data = {'name': '     '}
+        serializer = BoardSerializer(data=data)
+        response = self.client.patch(f'/tasks/boards/{board.id}/', data=data, format='json')
+        
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_name_null_patch(self):
+        board = Board.objects.create(name='Sample Board')
+        data = {'age': 23}        
+        response = self.client.patch(f'/tasks/boards/{board.id}/', data=data, format='json')
+                
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_read_only_field_patch(self):
+        client = APIClient()
+        board = Board.objects.create(name='Sample Board')
+        data = {'created_at': timezone.now() + timedelta(days=2)}        
+        response = client.patch(f'/tasks/boards/{board.id}/', data=data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(response.data['created_at'], data['created_at'])
+
+    def test_update_board(self):
+        client = APIClient()        
+        board = Board.objects.create(name='Sample Board')
+        data = {'name': 'Test Board'}
+        response = client.patch(f'/tasks/boards/{board.id}/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], data['name'])
+
+    def test_delete_board_not_found(self):
+        client = APIClient()
+        response = client.delete('/tasks/boards/0/')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], BOARD_NOT_FOUND)
+
+    def test_delete_board_success(self):
+        client = APIClient()
+        board_1 = Board.objects.create(name='Sample Board 1')
+        board_2 = Board.objects.create(name='Sample Board 2')
+        response = client.delete(f'/tasks/boards/{board_1.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['msg'], BOARD_DELETED)
+        with self.assertRaises(Board.DoesNotExist):
+            Board.objects.get(id=board_1.id)
+
+        created_board = Board.objects.get(id=board_2.id)
+        self.assertEqual(created_board.id, board_2.id) 
+        
