@@ -5,7 +5,7 @@ from rest_framework import status
 
 from .models import Board
 from .serializers import BoardSerializer
-from .constants import BOARD_NOT_FOUND
+from .constants import BOARD_NOT_FOUND, BOARD_DELETED
 
 # Create your views here.
 @api_view(['GET', 'POST'])
@@ -36,3 +36,11 @@ def board_detail(request, id):
     if request.method == 'GET':
         serializer = BoardSerializer(board)
         return Response(serializer.data)
+    if request.method == 'PATCH':
+        serializer = BoardSerializer(board, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    board.delete()
+    return Response(data={'msg': BOARD_DELETED}, status=status.HTTP_204_NO_CONTENT)
