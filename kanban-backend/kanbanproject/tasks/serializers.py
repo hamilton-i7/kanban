@@ -34,7 +34,7 @@ class BoardSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Board
         fields = ['id', 'name', 'columns', 'created_at', 'last_modified']
-        read_only_fields = ['id', 'created_at', 'last_modified']
+        read_only_fields = ['created_at', 'last_modified']
 
     def get_columns(self, board):
         columns = Column.objects.filter(board=board)
@@ -42,7 +42,37 @@ class BoardSerializer(DynamicFieldsModelSerializer):
         return serializer.data
 
 
-class ColumnSerializer(serializers.ModelSerializer):    
+class ColumnListSerializer(serializers.ListSerializer):
+    def create(self, validated_data):
+        columns = [Column(board=self.context['board'], **item) for item in validated_data]
+        return Column.objects.bulk_create(columns)
+
+    def update(self, instance, validated_data):
+        # Maps for id->instance and id->data item.        
+        column_mapping: dict[int, Column] = {column.id: column for column in instance}
+        data_mapping = {item['id']: item for item in validated_data if 'id' in item}
+
+        for column_id, column in column_mapping.items():
+            data = data_mapping.get(column_id)
+            if data:
+                column.name = data.get('name', column.name)
+                column.save()
+
+        new_columns = [Column(board=self.context['board'], **item) for item in validated_data if 'id' not in item]
+        Column.objects.bulk_create(new_columns)
+        
+        return instance
+
+
+class ColumnSerializer(serializers.ModelSerializer):
+    def get_fields(self):
+        fields = super().get_fields()
+
+        if not self.instance:
+            fields.pop('id', None)
+        return fields
+
+    id = serializers.IntegerField()
     name = serializers.CharField(
         validators=[MaxLengthValidator(limit_value=COLUMN_NAME_MAX_LENGTH, message=COLUMN_NAME_MAX_LENGTH_ERROR)]
     )    
@@ -50,9 +80,5 @@ class ColumnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Column
         fields = ['id', 'name', 'created_at', 'last_modified']
-        read_only_fields = ['id', 'created_at', 'last_modified']
-
-    def create(self, validated_data):
-        board = self.context['board']
-        column = Column.objects.create(board=board, **validated_data)
-        return column
+        read_only_fields = ['board', 'created_at', 'last_modified']
+        list_serializer_class = ColumnListSerializer
