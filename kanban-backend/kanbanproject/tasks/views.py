@@ -75,24 +75,6 @@ def update_board(board: Board, data):
     columns_serializer.save()
             
     columns_with_ID = [column for column in columns_data if 'id' in column]
-    # columns_without_ID = [column for column in columns_data if 'id' not in column]
-
-    # If there's a matching ID: update column
-    # columns_to_create = []
-    # for column in columns_with_ID:
-    #     column_to_update = next((old_column for old_column in old_columns if old_column.id == column['id']), None)        
-    #     if column_to_update:
-    #         column_to_update.name = column['name']
-    #     else:
-    #         # If ID's don't match: create column
-    #         columns_to_create.append(Column(name=column['name']))
-    # Column.objects.bulk_update(old_columns, fields=['name'])
-    
-    # If there's no ID: create column
-    # columns_to_create += [Column(name=column['name']) for column in columns_without_ID]
-    # Column.objects.bulk_create(columns_to_create + columns_to_create)
-
-    # If a column is not found in the new list, delete it
     columns_to_delete = [old_column.id for old_column in old_columns if not next((column for column in columns_with_ID if column['id'] == old_column.id), None)]    
     Column.objects.filter(id__in=columns_to_delete).delete()
     
