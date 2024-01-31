@@ -1,6 +1,6 @@
 from django.db import models
 
-from .constants import BOARD_NAME_MAX_LENGTH
+from .constants import BOARD_NAME_MAX_LENGTH, COLUMN_NAME_MAX_LENGTH
 
 # Create your models here.
 class Board(models.Model):
@@ -10,8 +10,8 @@ class Board(models.Model):
 
 
 class Column(models.Model):
-    name = models.CharField(max_length=50)
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
+    name = models.CharField(max_length=COLUMN_NAME_MAX_LENGTH)
+    board = models.ForeignKey(Board, related_name='columns', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 

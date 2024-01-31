@@ -4,42 +4,57 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
-from .models import Board
-from .serializers import BoardSerializer
-from .constants import BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED
+from .models import Board, Column
+from .serializers import BoardSerializer, ColumnSerializer
+from .constants import BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED, COLUMN_NAME_MAX_LENGTH_ERROR
 
 # Create your tests here.
 class BoardAPITests(APITestCase):
-    def test_name_length_exceeded(self):
+    def test_board_name_too_long(self):
         data = {'name': 'A' * (Board._meta.get_field('name').max_length + 1)}
-        serializer = BoardSerializer(data=data)
-        response = self.client.post('/tasks/boards/', data=data, format='json')                     
+        serializer = BoardSerializer(data=data)        
         
         with self.assertRaises(ValidationError) as context:
             serializer.is_valid(raise_exception=True)
-
         self.assertEqual(context.exception.detail['name'][0], BOARD_NAME_MAX_LENGTH_ERROR)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_name_blank(self):
+    def test_create_board_name_too_long(self):        
+        client = APIClient()
+        data = {'name': 'A' * (Board._meta.get_field('name').max_length + 1)}
+        response = client.post('/tasks/boards/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['name'][0], BOARD_NAME_MAX_LENGTH_ERROR)
+
+    def test_board_name_blank(self):
         data = {'name': '     '}
-        serializer = BoardSerializer(data=data)
-        response = self.client.post('/tasks/boards/', data=data, format='json')                     
+        serializer = BoardSerializer(data=data)        
         
         with self.assertRaises(ValidationError):
-            serializer.is_valid(raise_exception=True)        
+            serializer.is_valid(raise_exception=True)
+
+    def test_create_board_name_blank(self):
+        client = APIClient()
+        data = {'name': '     '}
+        response = client.post('/tasks/boards/', data=data, format='json')
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_name_null(self):
+    def test_board_name_null(self):
         data = {'age': 23}
-        serializer = BoardSerializer(data=data)
-        response = self.client.post('/tasks/boards/', data=data, format='json')                     
+        serializer = BoardSerializer(data=data)        
         
         with self.assertRaises(ValidationError):
-            serializer.is_valid(raise_exception=True)        
+            serializer.is_valid(raise_exception=True)
+
+    def test_create_board_name_null(self):
+        client = APIClient()
+        data = {'age': 23}
+        response = client.post('/tasks/boards/', data=data, format='json')
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_create_board(self):
+    def test_create_board_success(self):
         client = APIClient()        
         data = {'name': 'Test Board'}
         response = client.post('/tasks/boards/', data=data, format='json')
@@ -60,6 +75,85 @@ class BoardAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], data['name'])
         self.assertNotEqual(response.data['created_at'], data['created_at'])
+
+    def test_column_name_too_long(self):
+        data = {'name': 'A' * (Column._meta.get_field('name').max_length + 1)}
+        serializer = ColumnSerializer(data=data)        
+        
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)
+        self.assertEqual(context.exception.detail['name'][0], COLUMN_NAME_MAX_LENGTH_ERROR)
+
+    def test_create_board_with_columns_name_too_long(self):
+        client = APIClient()
+        data = {
+            'name': 'Test Board',
+            'columns': [
+                {'name': 'A' * (Board._meta.get_field('name').max_length + 1)},
+                {'name': 'Column 2'},
+            ]
+        }        
+        response = client.post('/tasks/boards/', data=data, format='json')                
+                
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data[0]['name'][0], COLUMN_NAME_MAX_LENGTH_ERROR)  
+
+    def test_column_name_blank(self):
+        data = {'name': '    '}
+        serializer = ColumnSerializer(data=data)        
+        
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+    def test_create_board_with_columns_name_blank(self):
+        client = APIClient()
+        data = {
+            'name': 'Test Board',
+            'columns': [
+                {'name': '   '},
+                {'name': 'Column 2'},
+            ]
+        }        
+        response = client.post('/tasks/boards/', data=data, format='json')                
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_column_name_null(self):
+        data = {'age': 23}
+        serializer = ColumnSerializer(data=data)        
+        
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+    def test_create_board_with_columns_name_null(self):
+        client = APIClient()
+        data = {
+            'name': 'Test Board',
+            'columns': [
+                {'age': 23},
+                {'name': 'Column 2'},
+            ]
+        }        
+        response = client.post('/tasks/boards/', data=data, format='json')                
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_board_with_columns_success(self):
+        client = APIClient()
+        data = {
+            'name': 'Test Board',
+            'columns': [
+                {'name': 'Column 1'},
+                {'name': 'Column 2'},
+            ]
+        }
+        response = client.post('/tasks/boards/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('name', response.data)
+        self.assertEqual(response.data['name'], data['name'])
+
+        columns = Column.objects.filter(board=response.data['id'])
+        self.assertIn('columns', response.data)
+        self.assertEqual(len(columns), len(data['columns']))
 
     def test_list_boards(self):
         client = APIClient()
@@ -99,6 +193,26 @@ class BoardAPITests(APITestCase):
         self.assertEqual(response.data['id'], board.id)
         self.assertIn('created_at', response.data)
         self.assertIn('last_modified', response.data)
+
+    def test_get_board_with_columns(self):        
+        client = APIClient()
+        board = Board.objects.create(name='Sample Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        response = client.get(f'/tasks/boards/{board.id}/')
+
+        self.assertEqual(response.data['name'], board.name)
+        self.assertEqual(response.data['id'], board.id)
+        self.assertIn('created_at', response.data)
+        self.assertIn('last_modified', response.data)
+
+        for i, column in enumerate(columns):
+            self.assertEqual(response.data['columns'][i]['id'], column.id)
+            self.assertEqual(response.data['columns'][i]['name'], column.name)            
 
     def test_get_board_not_found(self):
         client = APIClient()
