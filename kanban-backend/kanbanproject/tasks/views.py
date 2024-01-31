@@ -72,11 +72,7 @@ def update_board(board: Board, data):
     if not columns_serializer.is_valid():        
         return Response(columns_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    columns_serializer.save()
-            
-    columns_with_ID = [column for column in columns_data if 'id' in column]
-    columns_to_delete = [old_column.id for old_column in old_columns if not next((column for column in columns_with_ID if column['id'] == old_column.id), None)]    
-    Column.objects.filter(id__in=columns_to_delete).delete()
+    columns_serializer.save()            
     
     board_with_columns = Board.objects.prefetch_related('columns').get(pk=board.id)
     board_serializer = BoardSerializer(board_with_columns)

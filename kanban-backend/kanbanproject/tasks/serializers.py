@@ -57,7 +57,9 @@ class ColumnListSerializer(serializers.ListSerializer):
             if data:
                 column.name = data.get('name', column.name)
                 column.save()
-
+            else:
+                column.delete()
+                
         new_columns = [Column(board=self.context['board'], **item) for item in validated_data if 'id' not in item]
         Column.objects.bulk_create(new_columns)
         
