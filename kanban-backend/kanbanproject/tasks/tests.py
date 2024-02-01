@@ -5,9 +5,9 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
-from .models import Board, Column
-from .serializers import BoardSerializer, ColumnSerializer
-from .constants import BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED, COLUMN_NAME_MAX_LENGTH_ERROR
+from .models import Board, Column, Task
+from .serializers import BoardSerializer, ColumnSerializer, TaskSerializer
+from .constants import BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED, COLUMN_NAME_MAX_LENGTH_ERROR, TASK_TITLE_MAX_LENGTH_ERROR, TASK_NOT_FOUND, TASK_DELETED
 
 # Create your tests here.
 class BoardAPITests(APITestCase):
@@ -496,4 +496,176 @@ class BoardAPITests(APITestCase):
 
         created_board = Board.objects.get(id=board_2.id)
         self.assertEqual(created_board.id, board_2.id) 
+
+    def test_task_title_too_long(self):
+        data = {'title': 'A' * (Task._meta.get_field('title').max_length + 1)}
+        serializer = TaskSerializer(data=data)        
         
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)
+        self.assertEqual(context.exception.detail['title'][0], TASK_TITLE_MAX_LENGTH_ERROR)
+
+    def test_task_title_blank(self):
+        data = {'title': '     '}
+        serializer = TaskSerializer(data=data)        
+        
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+    def test_task_required_fields_missing(self):
+        data = {'description': 'This is a description.'}
+        serializer = TaskSerializer(data=data)
+        
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)        
+        self.assertIn('title', context.exception.detail)
+        self.assertIn('column', context.exception.detail)
+
+    def test_create_task_title_too_long(self):
+        client = APIClient()
+        data = {'title': 'A' * (Task._meta.get_field('title').max_length + 1)}
+        response = client.post('/tasks/items/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['title'][0], TASK_TITLE_MAX_LENGTH_ERROR)
+
+    def test_create_task_required_fields_missing(self):
+        client = APIClient()
+        data = {'description': 'This is a description.'}
+        response = client.post('/tasks/items/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('title', response.data)
+        self.assertIn('column', response.data)
+
+    def test_create_task_title_blank(self):
+        client = APIClient()
+        data = {'title': '     '}
+        response = client.post('/tasks/items/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_task_success(self):
+        client = APIClient()        
+        board = Board.objects.create(name='Test Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        data = {'title': 'Sample Task', 'column': columns[0].id}
+        response = client.post('/tasks/items/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED) 
+        self.assertIn('title', response.data)
+        self.assertEqual(response.data['title'], data['title'])
+        self.assertEqual(response.data['column'], data['column'])
+
+    def test_update_task_title_too_long(self):
+        client = APIClient()
+        board = Board.objects.create(name='Test Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        task = Task.objects.create(title='Sample Task', description='This is a task description.', column=columns[0])
+        data = {'title': 'A' * (Task._meta.get_field('title').max_length + 1)}
+        response = client.patch(f'/tasks/items/{task.id}/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['title'][0], TASK_TITLE_MAX_LENGTH_ERROR)
+
+    def test_update_task_title_blank(self):
+        client = APIClient()
+        board = Board.objects.create(name='Test Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        task = Task.objects.create(title='Sample Task', description='This is a task description.', column=columns[0])
+        data = {'title': '     '}
+        response = client.patch(f'/tasks/items/{task.id}/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_task_not_found(self):
+        client = APIClient()
+        response = client.patch('/tasks/items/0/')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], TASK_NOT_FOUND)
+
+    def test_update_task_success(self):
+        client = APIClient()        
+        board = Board.objects.create(name='Test Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        task = Task.objects.create(title='Sample Task', column=columns[0])
+        data = {'column': columns[1].id, 'description': 'New description.'}
+        response = client.patch(f'/tasks/items/{task.id}/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)         
+        self.assertEqual(response.data['description'], data['description'])
+        self.assertEqual(response.data['column'], data['column'])
+
+    def test_get_task_not_found(self):
+        client = APIClient()
+        response = client.get('/tasks/items/0/')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], TASK_NOT_FOUND)
+
+    def test_get_task_success(self):
+        client = APIClient()
+        board = Board.objects.create(name='Test Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        task = Task.objects.create(title='Sample Task', column=columns[0])
+        response = client.get(f'/tasks/items/{task.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], task.id)        
+        self.assertEqual(response.data['title'], task.title)
+        self.assertEqual(response.data['description'], task.description)
+
+    def test_delete_task_not_found(self):
+        client = APIClient()
+        response = client.delete('/tasks/items/0/')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], TASK_NOT_FOUND)
+
+    def test_delete_task_success(self):
+        client = APIClient()
+        board = Board.objects.create(name='Test Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        task_1 = Task.objects.create(title='Sample Task 1', column=columns[0])
+        task_2 = Task.objects.create(title='Sample Task 2', column=columns[1])
+        
+        response = client.delete(f'/tasks/items/{task_1.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['msg'], TASK_DELETED)
+        with self.assertRaises(Task.DoesNotExist):
+            Task.objects.get(id=task_1.id)
+
+        created_task = Task.objects.get(id=task_2.id)
+        self.assertEqual(created_task.id, task_2.id) 

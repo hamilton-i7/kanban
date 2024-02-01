@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.core.validators import MaxLengthValidator
 
-from .models import Board, Column
-from .constants import BOARD_NAME_MAX_LENGTH, BOARD_NAME_MAX_LENGTH_ERROR, COLUMN_NAME_MAX_LENGTH, COLUMN_NAME_MAX_LENGTH_ERROR
+from .models import Board, Column, Task
+from .constants import BOARD_NAME_MAX_LENGTH, BOARD_NAME_MAX_LENGTH_ERROR, COLUMN_NAME_MAX_LENGTH, COLUMN_NAME_MAX_LENGTH_ERROR, TASK_TITLE_MAX_LENGTH, TASK_TITLE_MAX_LENGTH_ERROR
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
@@ -66,7 +66,18 @@ class ColumnListSerializer(serializers.ListSerializer):
         return instance
 
 
-class ColumnSerializer(serializers.ModelSerializer):
+class ColumnSerializer(serializers.ModelSerializer):    
+    id = serializers.IntegerField()
+    name = serializers.CharField(
+        validators=[MaxLengthValidator(limit_value=COLUMN_NAME_MAX_LENGTH, message=COLUMN_NAME_MAX_LENGTH_ERROR)]
+    )
+
+    class Meta:
+        model = Column
+        fields = ['id', 'name', 'created_at', 'last_modified']
+        read_only_fields = ['board', 'created_at', 'last_modified']
+        list_serializer_class = ColumnListSerializer
+
     def get_fields(self):
         fields = super().get_fields()
 
@@ -74,13 +85,13 @@ class ColumnSerializer(serializers.ModelSerializer):
             fields.pop('id', None)
         return fields
 
-    id = serializers.IntegerField()
-    name = serializers.CharField(
-        validators=[MaxLengthValidator(limit_value=COLUMN_NAME_MAX_LENGTH, message=COLUMN_NAME_MAX_LENGTH_ERROR)]
-    )    
+
+class TaskSerializer(serializers.ModelSerializer):    
+    title = serializers.CharField(
+        validators=[MaxLengthValidator(limit_value=TASK_TITLE_MAX_LENGTH, message=TASK_TITLE_MAX_LENGTH_ERROR)]
+    )
 
     class Meta:
-        model = Column
-        fields = ['id', 'name', 'created_at', 'last_modified']
-        read_only_fields = ['board', 'created_at', 'last_modified']
-        list_serializer_class = ColumnListSerializer
+        model = Task
+        fields = ['id', 'title', 'description', 'column', 'created_at', 'last_modified']
+        read_only_fields = ['created_at', 'last_modified']

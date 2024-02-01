@@ -18,7 +18,7 @@ class Column(models.Model):
 
 class Task(models.Model):
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     column = models.ForeignKey(Column, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
