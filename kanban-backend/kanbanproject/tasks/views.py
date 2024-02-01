@@ -4,8 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Board, Column, Task
-from .serializers import BoardSerializer, ColumnSerializer, TaskSerializer
+from .models import Board, Column, Task, Subtask
+from .serializers import BoardSerializer, ColumnSerializer, TaskSerializer, SubtaskSerializer
 from .constants import BOARD_NOT_FOUND, BOARD_DELETED, TASK_NOT_FOUND, TASK_DELETED
 
 # Create your views here.
@@ -84,13 +84,24 @@ def delete_board(board: Board):
     return Response(data={'msg': BOARD_DELETED}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
-def create_task(request):    
+def create_task(request):
     serializer = TaskSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    serializer.save()
-    return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+    task = serializer.save()
+    subtasks_data = request.data.get('subtasks', [])
+    subtasks_serializer = SubtaskSerializer(data=subtasks_data, many=True, context={'task': task})
+
+    if not subtasks_serializer.is_valid():
+        task.delete()
+        return Response(subtasks_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    subtasks_serializer.save()
+
+    task_with_subtasks = Task.objects.prefetch_related('subtasks').get(pk=task.id)
+    task_serializer = TaskSerializer(task_with_subtasks)
+    return Response(data=task_serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 def task_detail(request, id: int):
@@ -115,7 +126,19 @@ def update_task(task: Task, data):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     serializer.save()
-    return Response(serializer.data, status=status.HTTP_200_OK)
+
+    old_subtasks = Subtask.objects.filter(task=task.id)
+    subtasks_data = data.get('subtasks', [])
+    subtasks_serializer = SubtaskSerializer(old_subtasks, data=subtasks_data, many=True, partial=True, context={'task': task})
+
+    if not subtasks_serializer.is_valid():        
+        return Response(subtasks_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    subtasks_serializer.save()            
+    
+    task_with_subtasks = Task.objects.prefetch_related('subtasks').get(pk=task.id)
+    task_serializer = TaskSerializer(task_with_subtasks)
+    return Response(task_serializer.data, status=status.HTTP_200_OK)
 
 def delete_task(task: Task):
     task.delete()

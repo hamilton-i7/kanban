@@ -26,7 +26,7 @@ class Task(models.Model):
 
 class Subtask(models.Model):
     title = models.CharField(max_length=255)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, related_name='subtasks', on_delete=models.CASCADE)
     status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)

@@ -10,3 +10,6 @@ TASK_TITLE_MAX_LENGTH = 255
 TASK_TITLE_MAX_LENGTH_ERROR = 'Task name is too long.'
 TASK_NOT_FOUND = 'Task not found.'
 TASK_DELETED = 'Task deleted successfully.'
+
+SUBTASK_NAME_MAX_LENGTH = 255
+SUBTASK_NAME_MAX_LENGTH_ERROR = 'Subtask name is too long.'
