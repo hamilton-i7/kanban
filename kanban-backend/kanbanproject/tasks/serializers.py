@@ -76,11 +76,12 @@ class ColumnSerializer(serializers.ModelSerializer):
     name = serializers.CharField(
         validators=[MaxLengthValidator(limit_value=COLUMN_NAME_MAX_LENGTH, message=COLUMN_NAME_MAX_LENGTH_ERROR)]
     )
+    tasks = serializers.SerializerMethodField()
 
     class Meta:
         model = Column
-        fields = ['id', 'name', 'board', 'created_at', 'last_modified']
-        read_only_fields = ['board', 'created_at', 'last_modified']
+        fields = ['id', 'name', 'tasks', 'created_at', 'last_modified']
+        read_only_fields = ['tasks', 'created_at', 'last_modified']
         list_serializer_class = ColumnListSerializer
 
     def get_fields(self):
@@ -89,6 +90,11 @@ class ColumnSerializer(serializers.ModelSerializer):
         if not self.instance:
             fields.pop('id', None)
         return fields
+    
+    def get_tasks(self, column):
+        tasks = Task.objects.filter(column=column)
+        serializer = TaskSummarySerializer(tasks, many=True)
+        return serializer.data
 
 
 class TaskSerializer(serializers.ModelSerializer):    
@@ -105,6 +111,19 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_subtasks(self, task):
         subtasks = Subtask.objects.filter(task=task)
         serializer = SubtaskSerializer(subtasks, many=True)
+        return serializer.data
+
+
+class TaskSummarySerializer(serializers.ModelSerializer):
+    subtasks = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'subtasks']        
+
+    def get_subtasks(self, task):
+        subtasks = Subtask.objects.filter(task=task)
+        serializer = SubtaskSummarySerializer(subtasks, many=True)
         return serializer.data
 
 
@@ -151,3 +170,9 @@ class SubtaskSerializer(serializers.ModelSerializer):
         if not self.instance:
             fields.pop('id', None)
         return fields
+
+
+class SubtaskSummarySerializer(serializers.ModelSerializer):    
+    class Meta:
+        model = Subtask
+        fields = ['id', 'title', 'status']

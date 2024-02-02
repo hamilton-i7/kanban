@@ -1,5 +1,5 @@
+from django.db.models import Prefetch
 
-from functools import partial
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -54,8 +54,8 @@ def board_detail(request, id: int):
     return delete_board(board)
 
 def get_board(board: Board):
-    board_with_columns = Board.objects.prefetch_related('columns').get(pk=board.id)    
-    serializer = BoardSerializer(board_with_columns)
+    detailed_board = Board.objects.prefetch_related('columns__tasks__subtasks').get(pk=board.id)
+    serializer = BoardSerializer(detailed_board)
     return Response(serializer.data)
 
 def update_board(board: Board, data):

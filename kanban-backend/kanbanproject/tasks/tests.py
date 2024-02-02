@@ -196,17 +196,47 @@ class BoardAPITests(APITestCase):
 
     def test_get_board_success_fields(self):
         """
-        Assert the retrieved board is displaying all the necessary data.
+        Assert the retrieved board is displaying only the necessary data.
         """
         client = APIClient()
         board = Board.objects.create(name='Sample Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board)
+            ]
+        )
+        task = Task.objects.create(title='Sample Task', column=columns[0])
+        subtasks = Subtask.objects.bulk_create([
+            Subtask(title='Subtask 1', task=task),
+            Subtask(title='Subtask 2', status=True, task=task),
+        ])
         response = client.get(f'/tasks/boards/{board.id}/')
 
-        self.assertEqual(response.data['name'], board.name)
         self.assertEqual(response.data['id'], board.id)
-        self.assertIn('columns', response.data)
+        self.assertEqual(response.data['name'], board.name)
         self.assertIn('created_at', response.data)
         self.assertIn('last_modified', response.data)
+        
+        self.assertNotIn('board', response.data['columns'][0])
+
+        for i, column in enumerate(columns):
+            self.assertEqual(response.data['columns'][i]['id'], column.id)
+            self.assertEqual(response.data['columns'][i]['name'], column.name)
+        
+        self.assertEqual(response.data['columns'][0]['tasks'][0]['title'], task.title)
+        self.assertNotIn('description', response.data['columns'][0]['tasks'][0])
+        self.assertNotIn('column', response.data['columns'][0]['tasks'][0])
+        self.assertNotIn('created_at', response.data['columns'][0]['tasks'][0])
+        self.assertNotIn('last_modified', response.data['columns'][0]['tasks'][0])
+
+        self.assertNotIn('task', response.data['columns'][0]['tasks'][0]['subtasks'][0])
+        self.assertNotIn('created_at', response.data['columns'][0]['tasks'][0]['subtasks'][0])
+        self.assertNotIn('last_modified', response.data['columns'][0]['tasks'][0]['subtasks'][0])
+
+        for i, subtask in enumerate(subtasks):
+            self.assertEqual(response.data['columns'][0]['tasks'][0]['subtasks'][i]['id'], subtask.id)
+            self.assertEqual(response.data['columns'][0]['tasks'][0]['subtasks'][i]['title'], subtask.title)
 
     def test_get_board_with_columns(self):        
         client = APIClient()
