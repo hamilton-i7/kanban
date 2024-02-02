@@ -1,6 +1,6 @@
 from django.db import models
 
-from .constants import BOARD_NAME_MAX_LENGTH
+from .constants import BOARD_NAME_MAX_LENGTH, COLUMN_NAME_MAX_LENGTH
 
 # Create your models here.
 class Board(models.Model):
@@ -10,23 +10,23 @@ class Board(models.Model):
 
 
 class Column(models.Model):
-    name = models.CharField(max_length=50)
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
+    name = models.CharField(max_length=COLUMN_NAME_MAX_LENGTH)
+    board = models.ForeignKey(Board, related_name='columns', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
 
 class Task(models.Model):
     title = models.CharField(max_length=255)
-    description = models.TextField()
-    column = models.ForeignKey(Column, on_delete=models.CASCADE)
+    description = models.TextField(blank=True)
+    column = models.ForeignKey(Column, related_name='tasks', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
 
 class Subtask(models.Model):
     title = models.CharField(max_length=255)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, related_name='subtasks', on_delete=models.CASCADE)
     status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
