@@ -1,3 +1,5 @@
+'use client'
+
 import { createTheme } from '@mui/material/styles'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 
@@ -38,7 +40,7 @@ const plus_jakarta_sans = Plus_Jakarta_Sans({
   subsets: ['latin'],
 })
 
-export const theme = createTheme({
+const theme = createTheme({
   palette: {
     common: {
       black: '#000112',
@@ -97,3 +99,5 @@ export const theme = createTheme({
   },
   spacing: (factor: number) => `${0.25 * factor}rem`,
 })
+
+export default theme
