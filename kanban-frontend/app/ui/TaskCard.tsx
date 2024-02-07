@@ -1,3 +1,4 @@
+import { Card, CardActionArea, CardContent, Typography } from '@mui/material'
 import React from 'react'
 
 type TaskCardProps = {
@@ -12,16 +13,37 @@ export default function TaskCard({
   completedSubtasks,
 }: TaskCardProps) {
   return (
-    <article
-      className="group w-[17.5rem] rounded-lg bg-white px-4 py-6 cursor-pointer focus:outline-none"
-      tabIndex={0}
+    <Card
+      component="article"
+      elevation={1}
+      sx={{
+        width: (theme) => theme.spacing(70),
+        borderRadius: (theme) => theme.spacing(2),
+        bgcolor: 'common.white',
+      }}
     >
-      <h3 className="font-bold text-sm text-black group-focus:text-purple group-hover:text-purple">
-        {title}
-      </h3>
-      <p className="font-bold text-xs text-gray-300">
-        {completedSubtasks} of {totalSubtasks} subtasks
-      </p>
-    </article>
+      <CardActionArea>
+        <CardContent sx={{ p: (theme) => theme.spacing(6, 4) }}>
+          <Typography
+            gutterBottom
+            variant="heading-m"
+            component="h3"
+            color="common.black"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: '3',
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {title}
+          </Typography>
+          <Typography variant="body-m" color="grey.500">
+            {completedSubtasks} of {totalSubtasks} subtasks
+          </Typography>
+        </CardContent>
+      </CardActionArea>
+    </Card>
   )
 }

@@ -4,14 +4,16 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import logoMobile from '../../public/logo-mobile.svg'
-import { AppBar, Button, IconButton, Toolbar } from '@mui/material'
+import { AppBar, Button, IconButton, Toolbar, alpha } from '@mui/material'
 import { Add, ExpandMore, MoreVert } from '@mui/icons-material'
-import data from '../lib/boards.json'
+import detailedBoards from '../lib/detailed_boards.json'
 import SelectBoardDialog from './SelectBoardDialog'
 import BoardMenu from './BoardMenu'
 
 function getBoard(boardId: number) {
-  const board = data.find((currentBoard) => currentBoard.id === boardId)
+  const board = detailedBoards.find(
+    (currentBoard) => currentBoard.id === boardId
+  )
   return board
 }
 
@@ -41,7 +43,12 @@ export default function BoardTopBar() {
 
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: 'common.white' }}>
-      <Toolbar sx={{ px: (theme) => theme.spacing(4) }}>
+      <Toolbar
+        sx={{
+          px: (theme) => theme.spacing(4),
+          height: (theme) => theme.spacing(16),
+        }}
+      >
         <Image src={logoMobile} alt="Kanban logo" />
         <Button
           endIcon={<ExpandMore color="primary" />}
@@ -59,12 +66,16 @@ export default function BoardTopBar() {
         <Button
           variant="contained"
           aria-label="Add new task"
+          disabled={board?.columns.length === 0 ?? false}
           disableElevation
           sx={{
             borderRadius: (theme) => theme.spacing(6),
             p: (theme) => theme.spacing(1, 2),
             minWidth: (theme) => theme.spacing(12),
             mr: (theme) => theme.spacing(1),
+            '&:disabled': {
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.25),
+            },
           }}
         >
           <Add sx={{ color: 'common.white' }} />
@@ -90,6 +101,7 @@ export default function BoardTopBar() {
         <SelectBoardDialog
           open={openSelectBoardMenu}
           onClose={handleCloseSelectBoardMenu}
+          selectedBoard={board?.id ?? 0}
         />
       </Toolbar>
     </AppBar>

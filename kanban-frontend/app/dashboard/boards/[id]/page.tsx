@@ -1,23 +1,50 @@
+'use client'
+
 import React from 'react'
-import Image from 'next/image'
-import iconAdd from '../../../../public/icon-add-task-mobile.svg'
+import { useParams } from 'next/navigation'
 import detailedBoards from '../../../lib/detailed_boards.json'
 import TaskCard from '@/app/ui/TaskCard'
+import { Box, Button, Stack, Typography } from '@mui/material'
+import { Add } from '@mui/icons-material'
 
 export default function Page() {
-  const board = detailedBoards[3]
+  const params = useParams<{ id: string }>()
+  const board = detailedBoards.find((board) => board.id === +params.id)
 
   return (
-    <div className="bg-gray-100 h-[calc(100vh-var(--top-bar-height))] px-4">
-      {board.columns.length === 0 && EmptyContent()}
-      {board.columns.length > 0 && (
-        <main className="flex gap-6 py-6 overflow-x-scroll h-full">
-          {board.columns.map((column) => (
-            <div key={column.id}>
-              <h2 className="font-bold text-xs text-gray-300 uppercase mb-6 tracking-[0.2em]">
+    <Box
+      sx={{
+        height: 'calc(100vh - var(--top-bar-height))',
+        bgcolor: 'background.default',
+        px: (theme) => theme.spacing(4),
+      }}
+    >
+      {board!.columns.length === 0 && EmptyContent()}
+      {board!.columns.length > 0 && (
+        <Stack
+          direction="row"
+          component="main"
+          spacing={6}
+          sx={{
+            py: (theme) => theme.spacing(6),
+            overflowX: 'scroll',
+            height: '100%',
+          }}
+        >
+          {board!.columns.map((column) => (
+            <Box key={column.id}>
+              <Typography
+                component="h2"
+                variant="heading-s"
+                color="grey.500"
+                sx={{
+                  textTransform: 'uppercase',
+                  mb: (theme) => theme.spacing(6),
+                }}
+              >
                 {column.name} ({column.tasks.length})
-              </h2>
-              <div className="flex flex-col gap-5">
+              </Typography>
+              <Stack spacing={5}>
                 {column.tasks.map((task) => (
                   <TaskCard
                     key={task.id}
@@ -28,28 +55,41 @@ export default function Page() {
                     }
                   />
                 ))}
-              </div>
-            </div>
+              </Stack>
+            </Box>
           ))}
-        </main>
+        </Stack>
       )}
-    </div>
+    </Box>
   )
 }
 
 function EmptyContent() {
   return (
-    <main className="w-full h-full flex flex-col items-center justify-center gap-6">
-      <p className="text-center text-lg font-bold text-gray-300">
+    <Stack
+      component="main"
+      spacing={6}
+      sx={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      <Typography paragraph align="center" variant="heading-l" color="grey.500">
         This board is empty. Create a new column to get started.
-      </p>
-      <button
-        type="button"
-        className="h-12 px-4 flex items-center gap-2 text-sm font-bold text-white rounded-3xl bg-purple capitalize"
+      </Typography>
+      <Button
+        variant="contained"
+        startIcon={<Add />}
+        sx={{
+          textTransform: 'capitalize',
+          borderRadius: (theme) => theme.spacing(6),
+          height: (theme) => theme.spacing(12),
+        }}
       >
-        <Image src={iconAdd} alt="Plus icon" />
         Add new column
-      </button>
-    </main>
+      </Button>
+    </Stack>
   )
 }
