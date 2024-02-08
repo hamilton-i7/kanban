@@ -1,25 +1,22 @@
-'use client'
-
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import logoMobile from '../../public/logo-mobile.svg'
 import { AppBar, Button, IconButton, Toolbar, alpha } from '@mui/material'
 import { Add, ExpandMore, MoreVert } from '@mui/icons-material'
-import detailedBoards from '../lib/detailed_boards.json'
 import SelectBoardDialog from './SelectBoardDialog'
 import BoardMenu from './BoardMenu'
+import { useBoard } from '../lib/hooks/board'
 
-function getBoard(boardId: number) {
-  const board = detailedBoards.find(
-    (currentBoard) => currentBoard.id === boardId
-  )
-  return board
+type BoardTopBarProps = {
+  onCreateBoard?: () => void
+  onEditBoard?: () => void
+  onDeleteBoard?: () => void
 }
 
-export default function BoardTopBar() {
+export default function BoardTopBar({ onCreateBoard }: BoardTopBarProps) {
   const params = useParams<{ id: string }>()
-  const board = getBoard(+params.id)
+  const { isPending, isError, error, data: board } = useBoard(+params.id)
 
   const [openSelectBoardMenu, setOpenSelectBoardMenu] = useState(false)
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
@@ -37,8 +34,16 @@ export default function BoardTopBar() {
     setAnchorEl(event.currentTarget)
   }
 
-  const handleOptionsClose = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleOptionsClose = () => {
     setAnchorEl(null)
+  }
+
+  if (isPending) {
+    return <div>Loading...</div>
+  }
+
+  if (isError) {
+    return <div>Error: {error.message}</div>
   }
 
   return (
@@ -61,12 +66,12 @@ export default function BoardTopBar() {
             typography: 'heading-l',
           }}
         >
-          {board?.name}
+          {board.name}
         </Button>
         <Button
           variant="contained"
           aria-label="Add new task"
-          disabled={board?.columns.length === 0 ?? false}
+          disabled={board.columns.length === 0 ?? false}
           disableElevation
           sx={{
             borderRadius: (theme) => theme.spacing(6),
@@ -101,7 +106,11 @@ export default function BoardTopBar() {
         <SelectBoardDialog
           open={openSelectBoardMenu}
           onClose={handleCloseSelectBoardMenu}
-          selectedBoard={board?.id ?? 0}
+          selectedBoard={board.id}
+          onCreateBoard={() => {
+            onCreateBoard?.()
+            handleCloseSelectBoardMenu()
+          }}
         />
       </Toolbar>
     </AppBar>

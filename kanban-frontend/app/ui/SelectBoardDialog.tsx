@@ -10,8 +10,8 @@ import {
   ListItemText,
   alpha,
 } from '@mui/material'
-import data from '../lib/boards.json'
 import BoardIcon from './BoardIcon'
+import { useBoards } from '../lib/hooks/board'
 
 type SelectBoardDialogProps = {
   open: boolean
@@ -26,6 +26,16 @@ export default function SelectBoardDialog({
   onCreateBoard,
   selectedBoard,
 }: SelectBoardDialogProps) {
+  const { isPending, isError, error, data: boards } = useBoards()
+
+  if (isPending) {
+    return <div>Loading...</div>
+  }
+
+  if (isError) {
+    return <div>Error: {error.message}</div>
+  }
+
   return (
     <Dialog
       onClose={onClose}
@@ -42,10 +52,10 @@ export default function SelectBoardDialog({
         variant="heading-s"
         sx={{ textTransform: 'uppercase', color: 'grey.500' }}
       >
-        All boards ({data.length})
+        All boards ({boards.length})
       </DialogTitle>
       <List>
-        {data.map((board) => (
+        {boards.map((board) => (
           <ListItem
             key={board.id}
             disablePadding
@@ -53,6 +63,7 @@ export default function SelectBoardDialog({
           >
             <ListItemButton
               href={`/dashboard/boards/${board.id}`}
+              onClick={onClose}
               LinkComponent={Link}
               sx={{
                 p: (theme) => theme.spacing(0, 6),

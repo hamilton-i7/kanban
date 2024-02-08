@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import theme from './lib/theme'
 import { CssBaseline } from '@mui/material'
 import './globals.css'
+import Providers from './providers'
 
 export const metadata: Metadata = {
   title: 'Kanban',
@@ -18,12 +19,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            {children}
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <Providers>
+          <AppRouterCacheProvider>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              {children}
+            </ThemeProvider>
+          </AppRouterCacheProvider>
+        </Providers>
       </body>
     </html>
   )
