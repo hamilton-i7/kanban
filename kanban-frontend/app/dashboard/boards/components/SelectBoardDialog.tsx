@@ -11,7 +11,7 @@ import {
   alpha,
 } from '@mui/material'
 import BoardIcon from './BoardIcon'
-import { useGetBoards } from '../../../lib/hooks/board'
+import { useGetBoards } from '../../../lib/hooks/board_hooks'
 
 type SelectBoardDialogProps = {
   open: boolean

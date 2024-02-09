@@ -1,6 +1,4 @@
-'use client'
-
-import React, { useState } from 'react'
+import React from 'react'
 import { Close } from '@mui/icons-material'
 import {
   Dialog,
@@ -19,38 +17,28 @@ import {
 type BoardFormProps = {
   open: boolean
   onClose: () => void
-  onConfirmClick: () => void
-  variant: 'create' | 'edit'
+  boardName?: string
+  onBoardNameChange?: (name: string) => void
+  columns?: string[]
+  onColumnUpdate?: (index: number, name: string) => void
+  onColumnAdd?: () => void
+  onColumnDelete?: (index: number) => void
+  onConfirmClick?: () => void
+  variant?: 'create' | 'edit'
 }
 
 export default function BoardForm({
   open,
   onClose,
+  boardName = '',
+  onBoardNameChange = () => {},
+  columns = [],
+  onColumnUpdate = () => {},
+  onColumnAdd = () => {},
+  onColumnDelete = () => {},
   onConfirmClick,
   variant = 'create',
 }: BoardFormProps) {
-  const [boardName, setBoardName] = useState('')
-  const [columns, setColumns] = useState<string[]>([])
-
-  const handleBoardNameChange = (name: string) => {
-    setBoardName(name)
-  }
-
-  const handleAddColumn = () => {
-    setColumns((currentColumns) => [...currentColumns, ''])
-  }
-
-  const handleUpdateColumn = (index: number, column: string) => {
-    const updatedColumns = [...columns]
-    updatedColumns[index] = column
-    setColumns(updatedColumns)
-  }
-
-  const handleDeleteColumn = (index: number) => {
-    const updatedColumns = columns.filter((_, i) => i !== index)
-    setColumns(updatedColumns)
-  }
-
   return (
     <Dialog
       open={open}
@@ -71,7 +59,7 @@ export default function BoardForm({
         component="h2"
         sx={{ textTransform: 'capitalize', color: 'common.black' }}
       >
-        Add new board
+        {variant === 'create' ? 'Add new board' : 'Edit board'}
       </DialogTitle>
       <DialogContent sx={{ p: (theme) => theme.spacing(0, 6) }}>
         <Typography
@@ -92,7 +80,7 @@ export default function BoardForm({
           fullWidth
           value={boardName}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-            handleBoardNameChange(event.target.value)
+            onBoardNameChange(event.target.value)
           }
           InputProps={{
             sx: { typography: 'body-l', color: 'common.black' },
@@ -119,7 +107,7 @@ export default function BoardForm({
                     fullWidth
                     value={name}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                      handleUpdateColumn(index, event.target.value)
+                      onColumnUpdate(index, event.target.value)
                     }
                     InputProps={{
                       sx: { typography: 'body-l', color: 'common.black' },
@@ -127,7 +115,7 @@ export default function BoardForm({
                   />
                   <IconButton
                     aria-label="Delete column"
-                    onClick={() => handleDeleteColumn(index)}
+                    onClick={() => onColumnDelete(index)}
                     sx={{ ml: (theme) => theme.spacing(1) }}
                   >
                     <Close sx={{ color: 'grey.500' }} />
@@ -149,7 +137,7 @@ export default function BoardForm({
         <Button
           fullWidth
           disableElevation
-          onClick={handleAddColumn}
+          onClick={onColumnAdd}
           sx={{
             borderRadius: (theme) => theme.spacing(5),
             color: 'primary.main',

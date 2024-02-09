@@ -6,7 +6,7 @@ import { AppBar, Button, IconButton, Toolbar, alpha } from '@mui/material'
 import { Add, ExpandMore, MoreVert } from '@mui/icons-material'
 import SelectBoardDialog from './SelectBoardDialog'
 import BoardMenu from './BoardMenu'
-import { useGetBoard } from '../../../lib/hooks/board'
+import { useGetBoard } from '../../../lib/hooks/board_hooks'
 
 type BoardTopBarProps = {
   onCreateBoard?: () => void
@@ -14,7 +14,10 @@ type BoardTopBarProps = {
   onDeleteBoard?: () => void
 }
 
-export default function BoardTopBar({ onCreateBoard }: BoardTopBarProps) {
+export default function BoardTopBar({
+  onCreateBoard,
+  onEditBoard,
+}: BoardTopBarProps) {
   const params = useParams<{ id: string }>()
   const { isPending, isError, error, data: board } = useGetBoard(+params.id)
 
@@ -34,7 +37,7 @@ export default function BoardTopBar({ onCreateBoard }: BoardTopBarProps) {
     setAnchorEl(event.currentTarget)
   }
 
-  const handleOptionsClose = () => {
+  const handleCloseOptionsMenu = () => {
     setAnchorEl(null)
   }
 
@@ -98,7 +101,11 @@ export default function BoardTopBar({ onCreateBoard }: BoardTopBarProps) {
         <BoardMenu
           anchorEl={anchorEl}
           open={openOptionsMenu}
-          onClose={handleOptionsClose}
+          onClose={handleCloseOptionsMenu}
+          onEditBoardClick={() => {
+            onEditBoard?.()
+            handleCloseOptionsMenu()
+          }}
           MenuListProps={{
             'aria-labelledby': 'board-menu-button',
           }}

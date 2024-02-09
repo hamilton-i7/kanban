@@ -4,7 +4,7 @@ import {
   QueryClient,
   dehydrate,
 } from '@tanstack/react-query'
-import { getBoard } from '@/app/lib/api/boardApi'
+import { getBoard } from '@/app/lib/api/board_api'
 import Board from '../components/Board'
 import { SINGLE_BOARD_KEY } from '@/app/lib/constants'
 

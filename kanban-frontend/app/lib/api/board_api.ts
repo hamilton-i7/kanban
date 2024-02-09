@@ -3,6 +3,7 @@ import {
   BoardWithColumns,
   CreateBoard,
   DetailedBoard,
+  EditBoard,
 } from '../models'
 import axiosInstance from './axiosInstance'
 
@@ -21,6 +22,14 @@ export const getBoard = async (id: number) => {
 export const createBoard = async (board: CreateBoard) => {
   const response = await axiosInstance.post<BoardWithColumns>(
     '/tasks/boards/',
+    board
+  )
+  return response.data
+}
+
+export const editBoard = async (id: number, board: EditBoard) => {
+  const response = await axiosInstance.patch<BoardWithColumns>(
+    `/tasks/boards/${id}/`,
     board
   )
   return response.data
