@@ -5,7 +5,7 @@ import {
   dehydrate,
 } from '@tanstack/react-query'
 import { getBoard } from '@/app/lib/api/boardApi'
-import Board from '../Board'
+import Board from '../components/Board'
 import { SINGLE_BOARD_KEY } from '@/app/lib/constants'
 
 export default async function BoardPage({

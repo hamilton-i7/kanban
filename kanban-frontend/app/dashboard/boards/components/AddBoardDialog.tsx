@@ -13,8 +13,8 @@ import {
   alpha,
 } from '@mui/material'
 import { Close } from '@mui/icons-material'
-import { useCreateBoard } from '../../lib/hooks/board'
-import { CreateBoard } from '../../lib/models'
+import { useCreateBoard } from '../../../lib/hooks/board'
+import { CreateBoard } from '../../../lib/models'
 import { useRouter } from 'next/navigation'
 
 type AddBoardDialogProps = {
