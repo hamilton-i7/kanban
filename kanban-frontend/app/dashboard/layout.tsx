@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import BoardTopBar from './boards/[id]/BoardTopBar'
+import BoardTopBar from './boards/BoardTopBar'
 import AddBoardDialog from './boards/AddBoardDialog'
 
 export default function DashboardLayout({

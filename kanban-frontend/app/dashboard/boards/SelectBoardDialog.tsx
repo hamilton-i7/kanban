@@ -10,8 +10,8 @@ import {
   ListItemText,
   alpha,
 } from '@mui/material'
-import BoardIcon from '../../../ui/BoardIcon'
-import { useGetBoards } from '../../../lib/hooks/board'
+import BoardIcon from '../../components/BoardIcon'
+import { useGetBoards } from '../../lib/hooks/board'
 
 type SelectBoardDialogProps = {
   open: boolean

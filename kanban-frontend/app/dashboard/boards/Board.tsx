@@ -2,7 +2,7 @@
 
 import React from 'react'
 import EmptyBoard from './EmptyBoard'
-import TaskCard from '@/app/dashboard/boards/[id]/TaskCard'
+import TaskCard from '@/app/dashboard/tasks/TaskCard'
 import {
   Box,
   Card,

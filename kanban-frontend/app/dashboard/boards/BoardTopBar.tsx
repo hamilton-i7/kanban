@@ -5,8 +5,8 @@ import logoMobile from '../../../../public/logo-mobile.svg'
 import { AppBar, Button, IconButton, Toolbar, alpha } from '@mui/material'
 import { Add, ExpandMore, MoreVert } from '@mui/icons-material'
 import SelectBoardDialog from './SelectBoardDialog'
-import BoardMenu from './BoardMenu'
-import { useGetBoard } from '../../../lib/hooks/board'
+import BoardMenu from './[id]/BoardMenu'
+import { useGetBoard } from '../../lib/hooks/board'
 
 type BoardTopBarProps = {
   onCreateBoard?: () => void
