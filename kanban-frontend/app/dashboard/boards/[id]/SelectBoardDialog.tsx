@@ -10,8 +10,8 @@ import {
   ListItemText,
   alpha,
 } from '@mui/material'
-import BoardIcon from './BoardIcon'
-import { useBoards } from '../lib/hooks/board'
+import BoardIcon from '../../../ui/BoardIcon'
+import { useGetBoards } from '../../../lib/hooks/board'
 
 type SelectBoardDialogProps = {
   open: boolean
@@ -26,7 +26,7 @@ export default function SelectBoardDialog({
   onCreateBoard,
   selectedBoard,
 }: SelectBoardDialogProps) {
-  const { isPending, isError, error, data: boards } = useBoards()
+  const { isPending, isError, error, data: boards } = useGetBoards()
 
   if (isPending) {
     return <div>Loading...</div>

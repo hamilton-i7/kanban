@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
-import logoMobile from '../../public/logo-mobile.svg'
+import logoMobile from '../../../../public/logo-mobile.svg'
 import { AppBar, Button, IconButton, Toolbar, alpha } from '@mui/material'
 import { Add, ExpandMore, MoreVert } from '@mui/icons-material'
 import SelectBoardDialog from './SelectBoardDialog'
 import BoardMenu from './BoardMenu'
-import { useBoard } from '../lib/hooks/board'
+import { useGetBoard } from '../../../lib/hooks/board'
 
 type BoardTopBarProps = {
   onCreateBoard?: () => void
@@ -16,7 +16,7 @@ type BoardTopBarProps = {
 
 export default function BoardTopBar({ onCreateBoard }: BoardTopBarProps) {
   const params = useParams<{ id: string }>()
-  const { isPending, isError, error, data: board } = useBoard(+params.id)
+  const { isPending, isError, error, data: board } = useGetBoard(+params.id)
 
   const [openSelectBoardMenu, setOpenSelectBoardMenu] = useState(false)
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
