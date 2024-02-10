@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createBoard, editBoard, getBoard, getBoards } from '../api/board_api'
+import {
+  createBoard,
+  deleteBoard,
+  editBoard,
+  getBoard,
+  getBoards,
+} from '../api/board_api'
 import { BOARDS_KEY, SINGLE_BOARD_KEY } from '../constants'
 import { CreateBoard, EditBoard } from '../models'
 
@@ -34,4 +40,18 @@ const useEditBoard = (boardId: number) => {
   })
 }
 
-export { useGetBoards, useGetBoard, useCreateBoard, useEditBoard }
+const useDeleteBoard = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (boardId: number) => deleteBoard(boardId),
+  })
+}
+
+export {
+  useGetBoards,
+  useGetBoard,
+  useCreateBoard,
+  useEditBoard,
+  useDeleteBoard,
+}

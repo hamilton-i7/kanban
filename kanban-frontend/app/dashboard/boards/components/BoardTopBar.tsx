@@ -17,6 +17,7 @@ type BoardTopBarProps = {
 export default function BoardTopBar({
   onCreateBoard,
   onEditBoard,
+  onDeleteBoard,
 }: BoardTopBarProps) {
   const params = useParams<{ id: string }>()
   const { isPending, isError, error, data: board } = useGetBoard(+params.id)
@@ -104,6 +105,10 @@ export default function BoardTopBar({
           onClose={handleCloseOptionsMenu}
           onEditBoardClick={() => {
             onEditBoard?.()
+            handleCloseOptionsMenu()
+          }}
+          onDeleteBoardClick={() => {
+            onDeleteBoard?.()
             handleCloseOptionsMenu()
           }}
           MenuListProps={{

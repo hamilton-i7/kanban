@@ -40,13 +40,13 @@ export default function EditBoardDialog({
     setColumns(updatedColumns)
   }
 
-  const handleCreateBoard = () => {
-    const board: EditBoard = {
+  const handleEditBoard = () => {
+    const updatedBoard: EditBoard = {
       name: boardName,
       columns: columns.map((column) => ({ name: column })),
     }
-    editBoard(board, {
-      onSuccess: (data) => {
+    editBoard(updatedBoard, {
+      onSuccess: () => {
         onClose()
       },
       onError: (error) => {
@@ -74,7 +74,7 @@ export default function EditBoardDialog({
       onColumnAdd={handleAddColumn}
       onColumnUpdate={handleUpdateColumn}
       onColumnDelete={handleDeleteColumn}
-      onConfirmClick={handleCreateBoard}
+      onConfirmClick={handleEditBoard}
     />
   )
 }

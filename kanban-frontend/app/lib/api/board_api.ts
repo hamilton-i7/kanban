@@ -34,3 +34,10 @@ export const editBoard = async (id: number, board: EditBoard) => {
   )
   return response.data
 }
+
+export const deleteBoard = async (id: number) => {
+  const response = await axiosInstance.delete<{ msg: string }>(
+    `/tasks/boards/${id}/`
+  )
+  return response.data
+}

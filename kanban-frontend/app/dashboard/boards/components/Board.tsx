@@ -18,6 +18,7 @@ import { Add } from '@mui/icons-material'
 import BoardTopBar from './BoardTopBar'
 import AddBoardDialog from './AddBoardDialog'
 import EditBoardDialog from './EditBoardDialog'
+import DeleteBoardDialog from './DeleteBoardDialog'
 
 export default function Board() {
   const params = useParams<{ id: string }>()
@@ -25,6 +26,7 @@ export default function Board() {
 
   const [openAddBoardDialog, setOpenAddBoardDialog] = useState(false)
   const [openEditBoardDialog, setOpenEditBoardDialog] = useState(false)
+  const [openDeleteBoardDialog, setOpenDeleteBoardDialog] = useState(false)
 
   const handleOpenAddBoardDialog = () => {
     setOpenAddBoardDialog(true)
@@ -42,6 +44,14 @@ export default function Board() {
     setOpenEditBoardDialog(false)
   }
 
+  const handleOpenDeleteBoardDialog = () => {
+    setOpenDeleteBoardDialog(true)
+  }
+
+  const handleCloseDeleteBoardDialog = () => {
+    setOpenDeleteBoardDialog(false)
+  }
+
   if (isPending) {
     return <div>Loading...</div>
   }
@@ -55,6 +65,7 @@ export default function Board() {
       <BoardTopBar
         onCreateBoard={handleOpenAddBoardDialog}
         onEditBoard={handleOpenEditBoardDialog}
+        onDeleteBoard={handleOpenDeleteBoardDialog}
       />
       <Box
         sx={{
@@ -153,6 +164,11 @@ export default function Board() {
       <EditBoardDialog
         open={openEditBoardDialog}
         onClose={handleCloseEditBoardDialog}
+        board={board}
+      />
+      <DeleteBoardDialog
+        open={openDeleteBoardDialog}
+        onClose={handleCloseDeleteBoardDialog}
         board={board}
       />
     </>
