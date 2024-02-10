@@ -19,7 +19,9 @@ export type CreateBoard = Pick<Board, 'name'> & {
   columns?: Pick<Column, 'name'>[]
 }
 
-export type EditBoard = Partial<CreateBoard>
+export type EditBoard = Partial<Pick<Board, 'name'>> & {
+  columns?: Partial<Pick<Column, 'id' | 'name'>>[]
+}
 
 export type BoardWithColumns = Board & {
   columns: Column[]

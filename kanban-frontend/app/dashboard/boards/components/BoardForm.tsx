@@ -129,8 +129,8 @@ export default function BoardForm({
       <DialogActions
         sx={{
           flexDirection: 'column',
-          p: (theme) => theme.spacing(3, 6, 6),
-          gap: (theme) => theme.spacing(6),
+          p: (theme) => theme.spacing(6),
+          gap: (theme) => theme.spacing(4),
           '& > .MuiButtonBase-root': { ml: 0 },
         }}
       >

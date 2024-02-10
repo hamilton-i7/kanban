@@ -19,6 +19,7 @@ import BoardTopBar from './BoardTopBar'
 import AddBoardDialog from './AddBoardDialog'
 import EditBoardDialog from './EditBoardDialog'
 import DeleteBoardDialog from './DeleteBoardDialog'
+import AddColumnDialog from './AddColumnDialog'
 
 export default function Board() {
   const params = useParams<{ id: string }>()
@@ -27,6 +28,7 @@ export default function Board() {
   const [openAddBoardDialog, setOpenAddBoardDialog] = useState(false)
   const [openEditBoardDialog, setOpenEditBoardDialog] = useState(false)
   const [openDeleteBoardDialog, setOpenDeleteBoardDialog] = useState(false)
+  const [openAddColumnDialog, setOpenAddColumnDialog] = useState(false)
 
   const handleOpenAddBoardDialog = () => {
     setOpenAddBoardDialog(true)
@@ -50,6 +52,14 @@ export default function Board() {
 
   const handleCloseDeleteBoardDialog = () => {
     setOpenDeleteBoardDialog(false)
+  }
+
+  const handleOpenAddColumnDialog = () => {
+    setOpenAddColumnDialog(true)
+  }
+
+  const handleCloseAddColumnDialog = () => {
+    setOpenAddColumnDialog(false)
   }
 
   if (isPending) {
@@ -130,6 +140,7 @@ export default function Board() {
               }}
             >
               <CardActionArea
+                onClick={handleOpenAddColumnDialog}
                 sx={{
                   height: '100%',
                   color: 'grey.500',
@@ -169,6 +180,11 @@ export default function Board() {
       <DeleteBoardDialog
         open={openDeleteBoardDialog}
         onClose={handleCloseDeleteBoardDialog}
+        board={board}
+      />
+      <AddColumnDialog
+        open={openAddColumnDialog}
+        onClose={handleCloseAddColumnDialog}
         board={board}
       />
     </>

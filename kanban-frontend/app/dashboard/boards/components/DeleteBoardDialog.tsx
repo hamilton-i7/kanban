@@ -39,7 +39,6 @@ export default function DeleteBoardDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      PaperProps={{ component: 'form' }}
       aria-labelledby="delete-board-dialog-title"
       aria-describedby="delete-board-dialog-description"
       sx={{
