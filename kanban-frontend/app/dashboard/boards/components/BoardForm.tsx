@@ -10,9 +10,9 @@ import {
   Box,
   IconButton,
   DialogActions,
-  Button,
-  alpha,
 } from '@mui/material'
+import FilledButton from '@/app/components/button/FilledButton'
+import TonalButton from '@/app/components/button/TonalButton'
 
 type BoardFormProps = {
   open: boolean
@@ -134,39 +134,11 @@ export default function BoardForm({
           '& > .MuiButtonBase-root': { ml: 0 },
         }}
       >
-        <Button
-          fullWidth
-          disableElevation
-          onClick={onColumnAdd}
-          sx={{
-            borderRadius: (theme) => theme.spacing(5),
-            color: 'primary.main',
-            typography: 'body-l',
-            textTransform: 'capitalize',
-            fontWeight: 'bold',
-            height: (theme) => theme.spacing(10),
-            '&.MuiButtonBase-root': {
-              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-            },
-          }}
-        >
-          Add new column
-        </Button>
-        <Button
-          variant="contained"
-          fullWidth
-          disableElevation
+        <TonalButton label="Add new column" onClick={onColumnAdd} />
+        <FilledButton
+          label={variant === 'create' ? 'Create new board' : 'Save changes'}
           onClick={onConfirmClick}
-          sx={{
-            borderRadius: (theme) => theme.spacing(5),
-            typography: 'body-l',
-            textTransform: 'capitalize',
-            fontWeight: 'bold',
-            height: (theme) => theme.spacing(10),
-          }}
-        >
-          {variant === 'create' ? 'Create new board' : 'Save changes'}
-        </Button>
+        />
       </DialogActions>
     </Dialog>
   )

@@ -1,3 +1,4 @@
+import FilledButton from '@/app/components/button/FilledButton'
 import { Add } from '@mui/icons-material'
 import { Stack, Typography, Button } from '@mui/material'
 import React from 'react'
@@ -18,17 +19,7 @@ export default function EmptyBoard() {
       <Typography paragraph align="center" variant="heading-l" color="grey.500">
         This board is empty. Create a new column to get started.
       </Typography>
-      <Button
-        variant="contained"
-        startIcon={<Add />}
-        sx={{
-          textTransform: 'capitalize',
-          borderRadius: (theme) => theme.spacing(6),
-          height: (theme) => theme.spacing(12),
-        }}
-      >
-        Add new column
-      </Button>
+      <FilledButton label="Add new column" startIcon={<Add />} />
     </Stack>
   )
 }
