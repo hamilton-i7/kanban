@@ -40,20 +40,7 @@ export default function BoardForm({
   variant = 'create',
 }: BoardFormProps) {
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      PaperProps={{ component: 'form' }}
-      sx={{
-        '& .MuiPaper-root': {
-          width: '100%',
-          maxWidth: (theme) => theme.spacing(120),
-          borderRadius: (theme) => theme.spacing(1.5),
-          bgcolor: 'common.white',
-          m: (theme) => theme.spacing(4),
-        },
-      }}
-    >
+    <Dialog open={open} onClose={onClose} PaperProps={{ component: 'form' }}>
       <DialogTitle
         variant="heading-l"
         component="h2"
@@ -61,7 +48,7 @@ export default function BoardForm({
       >
         {variant === 'create' ? 'Add new board' : 'Edit board'}
       </DialogTitle>
-      <DialogContent sx={{ p: (theme) => theme.spacing(0, 6) }}>
+      <DialogContent>
         <Typography
           variant="body-m"
           component="label"
@@ -126,14 +113,7 @@ export default function BoardForm({
           </>
         )}
       </DialogContent>
-      <DialogActions
-        sx={{
-          flexDirection: 'column',
-          p: (theme) => theme.spacing(6),
-          gap: (theme) => theme.spacing(4),
-          '& > .MuiButtonBase-root': { ml: 0 },
-        }}
-      >
+      <DialogActions>
         <TonalButton label="Add new column" onClick={onColumnAdd} />
         <FilledButton
           label={variant === 'create' ? 'Create new board' : 'Save changes'}

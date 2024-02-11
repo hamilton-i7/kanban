@@ -41,15 +41,6 @@ export default function DeleteBoardDialog({
       onClose={onClose}
       aria-labelledby="delete-board-dialog-title"
       aria-describedby="delete-board-dialog-description"
-      sx={{
-        '& .MuiPaper-root': {
-          width: '100%',
-          maxWidth: (theme) => theme.spacing(120),
-          borderRadius: (theme) => theme.spacing(1.5),
-          bgcolor: 'common.white',
-          m: (theme) => theme.spacing(4),
-        },
-      }}
     >
       <DialogTitle
         id="delete-board-dialog-title"
@@ -60,7 +51,7 @@ export default function DeleteBoardDialog({
       >
         Delete this board?
       </DialogTitle>
-      <DialogContent sx={{ p: (theme) => theme.spacing(0, 6) }}>
+      <DialogContent>
         <DialogContentText
           id="delete-board-dialog-description"
           color="grey.500"
@@ -70,14 +61,7 @@ export default function DeleteBoardDialog({
           This action will remove all columns and tasks and cannot be reversed.
         </DialogContentText>
       </DialogContent>
-      <DialogActions
-        sx={{
-          flexDirection: 'column',
-          p: (theme) => theme.spacing(6),
-          gap: (theme) => theme.spacing(4),
-          '& > .MuiButtonBase-root': { ml: 0 },
-        }}
-      >
+      <DialogActions>
         <FilledButton
           label="Delete"
           onClick={handleDeleteBoard}

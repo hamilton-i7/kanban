@@ -53,20 +53,7 @@ export default function AddColumnDialog({
   }, [open])
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      PaperProps={{ component: 'form' }}
-      sx={{
-        '& .MuiPaper-root': {
-          width: '100%',
-          maxWidth: (theme) => theme.spacing(120),
-          borderRadius: (theme) => theme.spacing(1.5),
-          bgcolor: 'common.white',
-          m: (theme) => theme.spacing(4),
-        },
-      }}
-    >
+    <Dialog open={open} onClose={onClose} PaperProps={{ component: 'form' }}>
       <DialogTitle
         variant="heading-l"
         component="h2"
@@ -74,7 +61,7 @@ export default function AddColumnDialog({
       >
         Add new column
       </DialogTitle>
-      <DialogContent sx={{ p: (theme) => theme.spacing(0, 6) }}>
+      <DialogContent>
         <Typography
           variant="body-m"
           component="label"
@@ -99,14 +86,7 @@ export default function AddColumnDialog({
           }}
         />
       </DialogContent>
-      <DialogActions
-        sx={{
-          flexDirection: 'column',
-          p: (theme) => theme.spacing(6),
-          gap: (theme) => theme.spacing(4),
-          '& > .MuiButtonBase-root': { ml: 0 },
-        }}
-      >
+      <DialogActions>
         <TonalButton label="Cancel" onClick={onClose} />
         <FilledButton label="Create" onClick={handleCreateColumn} />
       </DialogActions>
