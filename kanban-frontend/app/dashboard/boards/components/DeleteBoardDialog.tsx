@@ -1,6 +1,5 @@
 import React from 'react'
 import {
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
@@ -11,6 +10,7 @@ import TonalButton from '@/app/components/button/TonalButton'
 import FilledButton from '@/app/components/button/FilledButton'
 import { useDeleteBoard } from '@/app/lib/hooks/board_hooks'
 import { useRouter } from 'next/navigation'
+import Dialog from '@/app/components/Dialog'
 
 type DeleteBoardDialogProps = {
   open: boolean

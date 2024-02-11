@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import FilledButton from '@/app/components/button/FilledButton'
 import TonalButton from '@/app/components/button/TonalButton'
 import {
-  Dialog,
   DialogTitle,
   DialogContent,
   Typography,
@@ -11,6 +10,7 @@ import {
 } from '@mui/material'
 import { DetailedBoard, EditBoard } from '@/app/lib/models'
 import { useEditBoard } from '@/app/lib/hooks/board_hooks'
+import Dialog from '@/app/components/Dialog'
 
 type AddColumnDialogProps = {
   open: boolean

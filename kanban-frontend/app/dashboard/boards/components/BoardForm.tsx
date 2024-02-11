@@ -1,7 +1,6 @@
 import React from 'react'
 import { Close } from '@mui/icons-material'
 import {
-  Dialog,
   DialogTitle,
   DialogContent,
   Typography,
@@ -13,6 +12,7 @@ import {
 } from '@mui/material'
 import FilledButton from '@/app/components/button/FilledButton'
 import TonalButton from '@/app/components/button/TonalButton'
+import Dialog from '@/app/components/Dialog'
 
 type BoardFormProps = {
   open: boolean
