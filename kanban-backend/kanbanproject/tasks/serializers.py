@@ -71,7 +71,7 @@ class ColumnListSerializer(serializers.ListSerializer):
         return instance
 
 
-class ColumnSerializer(serializers.ModelSerializer):    
+class ColumnSerializer(DynamicFieldsModelSerializer):    
     id = serializers.IntegerField()
     name = serializers.CharField(
         validators=[MaxLengthValidator(limit_value=COLUMN_NAME_MAX_LENGTH, message=COLUMN_NAME_MAX_LENGTH_ERROR)]
@@ -160,7 +160,7 @@ class SubtaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subtask
-        fields = ['id', 'title', 'status', 'task', 'created_at', 'last_modified']
+        fields = ['id', 'title', 'status', 'created_at', 'last_modified']
         read_only_fields = ['task', 'created_at', 'last_modified']
         list_serializer_class = SubtaskListSerializer
 

@@ -6,7 +6,7 @@ from rest_framework import status
 
 from .models import Board, Column, Task, Subtask
 from .serializers import BoardSerializer, ColumnSerializer, TaskSerializer, SubtaskSerializer
-from .constants import BOARD_NOT_FOUND, BOARD_DELETED, TASK_NOT_FOUND, TASK_DELETED
+from .constants import BOARD_NOT_FOUND, BOARD_DELETED, TASK_NOT_FOUND, TASK_DELETED, COLUMN_NOT_FOUND
 
 # Create your views here.
 @api_view(['GET', 'POST'])
@@ -143,3 +143,14 @@ def update_task(task: Task, data):
 def delete_task(task: Task):
     task.delete()
     return Response(data={'msg': TASK_DELETED}, status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+def related_columns_by_column_id(_, id: int):
+    try:                
+        column = Column.objects.get(pk=id)
+    except Column.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND, data={'error': COLUMN_NOT_FOUND})
+    
+    columns = Column.objects.filter(board=column.board)
+    serializer = ColumnSerializer(columns, many=True, fields=('id', 'name'))
+    return Response(serializer.data)

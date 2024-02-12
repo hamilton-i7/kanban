@@ -5,6 +5,7 @@ BOARD_DELETED = 'Board deleted successfully.'
 
 COLUMN_NAME_MAX_LENGTH = 50
 COLUMN_NAME_MAX_LENGTH_ERROR = 'Column name is too long.'
+COLUMN_NOT_FOUND = 'Column not found.'
 
 TASK_TITLE_MAX_LENGTH = 255
 TASK_TITLE_MAX_LENGTH_ERROR = 'Task name is too long.'

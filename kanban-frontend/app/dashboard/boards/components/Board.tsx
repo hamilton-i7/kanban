@@ -117,6 +117,7 @@ export default function Board() {
                   {column.tasks.map((task) => (
                     <TaskCard
                       key={task.id}
+                      id={task.id}
                       title={task.title}
                       totalSubtasks={task.subtasks.length}
                       completedSubtasks={

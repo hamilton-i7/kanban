@@ -1,13 +1,16 @@
 import { Card, CardActionArea, CardContent, Typography } from '@mui/material'
+import Link from 'next/link'
 import React from 'react'
 
 type TaskCardProps = {
+  id: number
   title: string
   totalSubtasks: number
   completedSubtasks: number
 }
 
 export default function TaskCard({
+  id,
   title,
   totalSubtasks,
   completedSubtasks,
@@ -22,7 +25,7 @@ export default function TaskCard({
         bgcolor: 'common.white',
       }}
     >
-      <CardActionArea>
+      <CardActionArea href={`/dashboard/tasks/${id}`} LinkComponent={Link}>
         <CardContent sx={{ p: (theme) => theme.spacing(6, 4) }}>
           <Typography
             gutterBottom
