@@ -1,28 +1,30 @@
+'use client'
+
 import React from 'react'
-import { SINGLE_TASK_KEY } from '@/app/lib/constants'
-import {
-  QueryClient,
-  HydrationBoundary,
-  dehydrate,
-} from '@tanstack/react-query'
-import { getTask } from '@/app/lib/api/task_api'
 import TaskDetailDialog from '../components/TaskDetailDialog'
+import Board from '../../boards/components/Board'
+import { useGetBoardByTask } from '@/app/lib/hooks/task_hooks'
 
-export default async function TaskPage({
-  params,
-}: {
-  params: { taskId: string }
-}) {
-  const queryClient = new QueryClient()
+export default function TaskPage({ params }: { params: { taskId: string } }) {
+  const {
+    isPending,
+    isError,
+    error,
+    data: board,
+  } = useGetBoardByTask(+params.taskId)
 
-  await queryClient.prefetchQuery({
-    queryKey: [SINGLE_TASK_KEY, +params.taskId],
-    queryFn: () => getTask(+params.taskId),
-  })
+  if (isPending) {
+    return <div>Loading...</div>
+  }
+
+  if (isError) {
+    return <div>Error: {error.message}</div>
+  }
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <>
+      <Board boardId={board.id} />
       <TaskDetailDialog />
-    </HydrationBoundary>
+    </>
   )
 }

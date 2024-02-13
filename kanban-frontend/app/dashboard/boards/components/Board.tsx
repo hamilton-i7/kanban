@@ -21,14 +21,18 @@ import EditBoardDialog from './EditBoardDialog'
 import DeleteBoardDialog from './DeleteBoardDialog'
 import AddColumnDialog from './AddColumnDialog'
 
-export default function Board() {
+type BoardProps = {
+  boardId?: number
+}
+
+export default function Board({ boardId }: BoardProps) {
   const params = useParams<{ boardId: string }>()
   const {
     isPending,
     isError,
     error,
     data: board,
-  } = useGetBoard(+params.boardId)
+  } = useGetBoard(boardId ?? +params.boardId)
 
   const [openAddBoardDialog, setOpenAddBoardDialog] = useState(false)
   const [openEditBoardDialog, setOpenEditBoardDialog] = useState(false)
@@ -78,6 +82,7 @@ export default function Board() {
   return (
     <>
       <BoardTopBar
+        boardId={boardId}
         onCreateBoard={handleOpenAddBoardDialog}
         onEditBoard={handleOpenEditBoardDialog}
         onDeleteBoard={handleOpenDeleteBoardDialog}

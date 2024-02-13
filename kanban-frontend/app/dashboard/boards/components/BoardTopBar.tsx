@@ -9,12 +9,14 @@ import BoardMenu from './BoardMenu'
 import { useGetBoard } from '../../../lib/hooks/board_hooks'
 
 type BoardTopBarProps = {
+  boardId?: number
   onCreateBoard?: () => void
   onEditBoard?: () => void
   onDeleteBoard?: () => void
 }
 
 export default function BoardTopBar({
+  boardId,
   onCreateBoard,
   onEditBoard,
   onDeleteBoard,
@@ -25,7 +27,7 @@ export default function BoardTopBar({
     isError,
     error,
     data: board,
-  } = useGetBoard(+params.boardId)
+  } = useGetBoard(boardId ?? +params.boardId)
 
   const [openSelectBoardMenu, setOpenSelectBoardMenu] = useState(false)
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
