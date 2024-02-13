@@ -2,17 +2,17 @@ import React from 'react'
 
 type DashboardLayoutProps = {
   children: React.ReactNode
-  modal: React.ReactNode
+  taskModal: React.ReactNode
 }
 
 export default function DashboardLayout({
   children,
-  modal,
+  taskModal,
 }: DashboardLayoutProps) {
   return (
     <>
       {children}
-      {modal}
+      {taskModal}
     </>
   )
 }
