@@ -17,6 +17,7 @@ import SubtaskItem from './SubtaskItem'
 import { useParams, useRouter } from 'next/navigation'
 import { useGetTask } from '@/app/lib/hooks/task_hooks'
 import { useGetRelatedColumns } from '@/app/lib/hooks/column_hooks'
+import TaskMenu from './TaskMenu'
 
 export default function TaskDetailDialog() {
   const router = useRouter()
@@ -41,6 +42,17 @@ export default function TaskDetailDialog() {
   const totalSubtasks = task?.subtasks.length ?? 0
 
   const [selectedColumn, setSelectedColumn] = useState(columnId)
+
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const openOptionsMenu = Boolean(anchorEl)
+
+  const handleOptionsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleCloseOptionsMenu = () => {
+    setAnchorEl(null)
+  }
 
   const handleDialogClose = () => {
     router.back()
@@ -78,9 +90,25 @@ export default function TaskDetailDialog() {
         >
           {task.title}
         </DialogTitle>
-        <IconButton aria-label="More options" size="small">
+        <IconButton
+          id="task-menu-button"
+          aria-haspopup="true"
+          aria-controls={openOptionsMenu ? 'task-menu' : undefined}
+          aria-expanded={openOptionsMenu ? 'true' : undefined}
+          aria-label="More options"
+          size="small"
+          onClick={handleOptionsClick}
+        >
           <MoreVert sx={{ color: (theme) => theme.palette.grey[500] }} />
         </IconButton>
+        <TaskMenu
+          anchorEl={anchorEl}
+          open={openOptionsMenu}
+          onClose={handleCloseOptionsMenu}
+          MenuListProps={{
+            'aria-labelledby': 'task-menu-button',
+          }}
+        />
       </Box>
       <DialogContent
         sx={{ '&.MuiDialogContent-root': { pb: (theme) => theme.spacing(8) } }}

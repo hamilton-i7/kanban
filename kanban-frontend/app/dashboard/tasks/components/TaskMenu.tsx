@@ -1,25 +1,28 @@
-import Menu from '@/app/components/Menu'
-import { ListItemText, MenuItem, MenuProps, Typography } from '@mui/material'
 import React from 'react'
+import { MenuItem, ListItemText, Typography, MenuProps } from '@mui/material'
+import Menu from '@/app/components/Menu'
 
-type BoardMenuProps = MenuProps & {
-  onEditBoardClick?: () => void
-  onDeleteBoardClick?: () => void
+type TaskMenuProps = MenuProps & {
+  onEditTaskClick?: () => void
+  onDeleteTaskClick?: () => void
 }
 
-export default function BoardMenu({
+export default function TaskMenu({
   anchorEl,
   open,
   onClose,
-  onEditBoardClick,
-  onDeleteBoardClick,
+  onEditTaskClick,
+  onDeleteTaskClick,
   ...props
-}: BoardMenuProps) {
+}: TaskMenuProps) {
   return (
     <Menu
-      id="board-menu"
+      id="task-menu"
       anchorEl={anchorEl}
       open={open}
+      MenuListProps={{
+        component: 'menu',
+      }}
       onClose={onClose}
       elevation={2}
       sx={{
@@ -32,15 +35,15 @@ export default function BoardMenu({
       }}
       {...props}
     >
-      <MenuItem onClick={onEditBoardClick}>
+      <MenuItem onClick={onEditTaskClick}>
         <ListItemText
           disableTypography
           sx={{ typography: 'body-l', color: 'grey.500' }}
         >
-          Edit board
+          Edit task
         </ListItemText>
       </MenuItem>
-      <MenuItem onClick={onDeleteBoardClick}>
+      <MenuItem onClick={onDeleteTaskClick}>
         <ListItemText
           disableTypography
           sx={{
@@ -48,7 +51,7 @@ export default function BoardMenu({
             color: 'error.main',
           }}
         >
-          Delete board
+          Delete task
         </ListItemText>
       </MenuItem>
     </Menu>
