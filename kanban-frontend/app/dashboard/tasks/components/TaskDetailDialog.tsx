@@ -9,24 +9,24 @@ import {
   TextField,
   IconButton,
   Box,
-  Stack,
   MenuItem,
   MenuList,
 } from '@mui/material'
 import { MoreVert } from '@mui/icons-material'
 import SubtaskItem from './SubtaskItem'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useGetTask } from '@/app/lib/hooks/task_hooks'
 import { useGetRelatedColumns } from '@/app/lib/hooks/column_hooks'
 
 export default function TaskDetailDialog() {
-  const params = useParams<{ id: string }>()
+  const router = useRouter()
+  const params = useParams<{ taskId: string }>()
   const {
     isPending: isTaskPending,
     isError: isTaskError,
     error: taskError,
     data: task,
-  } = useGetTask(+params.id)
+  } = useGetTask(+params.taskId)
   const columnId = task?.column
 
   const {
@@ -42,6 +42,10 @@ export default function TaskDetailDialog() {
 
   const [selectedColumn, setSelectedColumn] = useState(columnId)
 
+  const handleDialogClose = () => {
+    router.back()
+  }
+
   if (isTaskPending || isColumnsPending) {
     return <div>Loading...</div>
   }
@@ -56,7 +60,7 @@ export default function TaskDetailDialog() {
   }
 
   return (
-    <Dialog open>
+    <Dialog open onClose={handleDialogClose}>
       <Box
         sx={{
           display: 'flex',

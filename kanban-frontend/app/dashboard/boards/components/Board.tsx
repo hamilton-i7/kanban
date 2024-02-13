@@ -22,8 +22,13 @@ import DeleteBoardDialog from './DeleteBoardDialog'
 import AddColumnDialog from './AddColumnDialog'
 
 export default function Board() {
-  const params = useParams<{ id: string }>()
-  const { isPending, isError, error, data: board } = useGetBoard(+params.id)
+  const params = useParams<{ boardId: string }>()
+  const {
+    isPending,
+    isError,
+    error,
+    data: board,
+  } = useGetBoard(+params.boardId)
 
   const [openAddBoardDialog, setOpenAddBoardDialog] = useState(false)
   const [openEditBoardDialog, setOpenEditBoardDialog] = useState(false)

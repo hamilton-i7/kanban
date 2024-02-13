@@ -11,13 +11,13 @@ import { SINGLE_BOARD_KEY } from '@/app/lib/constants'
 export default async function BoardPage({
   params,
 }: {
-  params: { id: string }
+  params: { boardId: string }
 }) {
   const queryClient = new QueryClient()
 
   await queryClient.prefetchQuery({
-    queryKey: [SINGLE_BOARD_KEY, +params.id],
-    queryFn: () => getBoard(+params.id),
+    queryKey: [SINGLE_BOARD_KEY, +params.boardId],
+    queryFn: () => getBoard(+params.boardId),
   })
 
   return (

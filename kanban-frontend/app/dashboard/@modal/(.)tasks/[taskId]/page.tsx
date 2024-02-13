@@ -1,19 +1,23 @@
 import React from 'react'
+import TaskDetailDialog from '@/app/dashboard/tasks/components/TaskDetailDialog'
+import { getTask } from '@/app/lib/api/task_api'
 import { SINGLE_TASK_KEY } from '@/app/lib/constants'
 import {
   QueryClient,
   HydrationBoundary,
   dehydrate,
 } from '@tanstack/react-query'
-import { getTask } from '@/app/lib/api/task_api'
-import TaskDetailDialog from '../components/TaskDetailDialog'
 
-export default async function TaskPage({ params }: { params: { id: string } }) {
+export default async function TaskDetailModalPage({
+  params,
+}: {
+  params: { taskId: string }
+}) {
   const queryClient = new QueryClient()
 
   await queryClient.prefetchQuery({
-    queryKey: [SINGLE_TASK_KEY, +params.id],
-    queryFn: () => getTask(+params.id),
+    queryKey: [SINGLE_TASK_KEY, +params.taskId],
+    queryFn: () => getTask(+params.taskId),
   })
 
   return (

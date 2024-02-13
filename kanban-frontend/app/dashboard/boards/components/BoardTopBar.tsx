@@ -19,8 +19,13 @@ export default function BoardTopBar({
   onEditBoard,
   onDeleteBoard,
 }: BoardTopBarProps) {
-  const params = useParams<{ id: string }>()
-  const { isPending, isError, error, data: board } = useGetBoard(+params.id)
+  const params = useParams<{ boardId: string }>()
+  const {
+    isPending,
+    isError,
+    error,
+    data: board,
+  } = useGetBoard(+params.boardId)
 
   const [openSelectBoardMenu, setOpenSelectBoardMenu] = useState(false)
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
