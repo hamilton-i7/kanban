@@ -1,24 +1,23 @@
-import React, { useEffect, useState } from 'react'
-import { useEditBoard } from '@/app/lib/hooks/board_hooks'
-import { EditBoard, DetailedBoard } from '@/app/lib/models'
+'use client'
+
+import React, { useState } from 'react'
+import { useEditBoard, useGetBoard } from '@/app/lib/hooks/board_hooks'
+import { EditBoard } from '@/app/lib/models'
 import BoardForm from './BoardForm'
+import { useRouter } from 'next/navigation'
 
 type EditBoardDialogProps = {
-  open: boolean
-  onClose: () => void
-  board: DetailedBoard
+  boardId: number
 }
 
-export default function EditBoardDialog({
-  open,
-  onClose,
-  board,
-}: EditBoardDialogProps) {
-  const { isPending, mutate: editBoard } = useEditBoard(board.id)
+export default function EditBoardDialog({ boardId }: EditBoardDialogProps) {
+  const router = useRouter()
+  const { isPending, isError, error, data: board } = useGetBoard(boardId)
+  const { mutate: editBoard } = useEditBoard(boardId)
 
-  const [boardName, setBoardName] = useState(board.name)
+  const [boardName, setBoardName] = useState(board?.name ?? '')
   const [columns, setColumns] = useState<string[]>(
-    board.columns.map((column) => column.name)
+    board?.columns.map((column) => column.name) ?? []
   )
 
   const handleBoardNameChange = (name: string) => {
@@ -40,6 +39,11 @@ export default function EditBoardDialog({
     setColumns(updatedColumns)
   }
 
+  const handleDialogClose = () => {
+    router.back()
+    // router.push(`/dashboard/boards/${boardId}`)
+  }
+
   const handleEditBoard = () => {
     const updatedBoard: EditBoard = {
       name: boardName,
@@ -47,7 +51,7 @@ export default function EditBoardDialog({
     }
     editBoard(updatedBoard, {
       onSuccess: () => {
-        onClose()
+        handleDialogClose()
       },
       onError: (error) => {
         console.log(error)
@@ -55,19 +59,11 @@ export default function EditBoardDialog({
     })
   }
 
-  useEffect(() => {
-    if (open) {
-      // Reset state when opening the dialog
-      setBoardName(board.name)
-      setColumns(board.columns.map((column) => column.name))
-    }
-  }, [open, board.name, board.columns])
-
   return (
     <BoardForm
       variant="edit"
-      open={open}
-      onClose={onClose}
+      open
+      onClose={handleDialogClose}
       boardName={boardName}
       onBoardNameChange={handleBoardNameChange}
       columns={columns}

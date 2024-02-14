@@ -16,8 +16,6 @@ import { useGetBoard } from '@/app/lib/hooks/board_hooks'
 import { useParams } from 'next/navigation'
 import { Add } from '@mui/icons-material'
 import BoardTopBar from './BoardTopBar'
-import AddBoardDialog from './AddBoardDialog'
-import EditBoardDialog from './EditBoardDialog'
 import DeleteBoardDialog from './DeleteBoardDialog'
 import AddColumnDialog from './AddColumnDialog'
 
@@ -34,26 +32,8 @@ export default function Board({ boardId }: BoardProps) {
     data: board,
   } = useGetBoard(boardId ?? +params.boardId)
 
-  const [openAddBoardDialog, setOpenAddBoardDialog] = useState(false)
-  const [openEditBoardDialog, setOpenEditBoardDialog] = useState(false)
   const [openDeleteBoardDialog, setOpenDeleteBoardDialog] = useState(false)
   const [openAddColumnDialog, setOpenAddColumnDialog] = useState(false)
-
-  const handleOpenAddBoardDialog = () => {
-    setOpenAddBoardDialog(true)
-  }
-
-  const handleCloseAddBoardDialog = () => {
-    setOpenAddBoardDialog(false)
-  }
-
-  const handleOpenEditBoardDialog = () => {
-    setOpenEditBoardDialog(true)
-  }
-
-  const handleCloseEditBoardDialog = () => {
-    setOpenEditBoardDialog(false)
-  }
 
   const handleOpenDeleteBoardDialog = () => {
     setOpenDeleteBoardDialog(true)
@@ -83,8 +63,6 @@ export default function Board({ boardId }: BoardProps) {
     <>
       <BoardTopBar
         boardId={boardId}
-        onCreateBoard={handleOpenAddBoardDialog}
-        onEditBoard={handleOpenEditBoardDialog}
         onDeleteBoard={handleOpenDeleteBoardDialog}
       />
       <Box
@@ -179,15 +157,6 @@ export default function Board({ boardId }: BoardProps) {
           </Stack>
         )}
       </Box>
-      <AddBoardDialog
-        open={openAddBoardDialog}
-        onClose={handleCloseAddBoardDialog}
-      />
-      <EditBoardDialog
-        open={openEditBoardDialog}
-        onClose={handleCloseEditBoardDialog}
-        board={board}
-      />
       <DeleteBoardDialog
         open={openDeleteBoardDialog}
         onClose={handleCloseDeleteBoardDialog}

@@ -16,14 +16,12 @@ import { useGetBoards } from '../../../lib/hooks/board_hooks'
 type SelectBoardDialogProps = {
   open: boolean
   onClose: () => void
-  onCreateBoard?: () => void
   selectedBoard: number
 }
 
 export default function SelectBoardDialog({
   open,
   onClose,
-  onCreateBoard,
   selectedBoard,
 }: SelectBoardDialogProps) {
   const { isPending, isError, error, data: boards } = useGetBoards()
@@ -116,7 +114,9 @@ export default function SelectBoardDialog({
         <ListItem disablePadding sx={{ height: (theme) => theme.spacing(12) }}>
           <ListItemButton
             autoFocus
-            onClick={onCreateBoard}
+            href="/dashboard/boards/new"
+            LinkComponent={Link}
+            onClick={onClose}
             sx={{
               p: (theme) => theme.spacing(0, 6),
               mr: (theme) => theme.spacing(6),

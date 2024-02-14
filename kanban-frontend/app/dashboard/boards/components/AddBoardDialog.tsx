@@ -1,15 +1,12 @@
-import React, { useEffect, useState } from 'react'
+'use client'
+
+import React, { useState } from 'react'
 import { useCreateBoard } from '../../../lib/hooks/board_hooks'
 import { CreateBoard } from '../../../lib/models'
 import { useRouter } from 'next/navigation'
 import BoardForm from './BoardForm'
 
-type AddBoardDialogProps = {
-  open: boolean
-  onClose: () => void
-}
-
-export default function AddBoardDialog({ open, onClose }: AddBoardDialogProps) {
+export default function AddBoardDialog() {
   const router = useRouter()
   const { isPending, mutate: createBoard } = useCreateBoard()
 
@@ -35,6 +32,10 @@ export default function AddBoardDialog({ open, onClose }: AddBoardDialogProps) {
     setColumns(updatedColumns)
   }
 
+  const handleDialogClose = () => {
+    router.back()
+  }
+
   const handleCreateBoard = () => {
     const board: CreateBoard = {
       name: boardName,
@@ -42,7 +43,6 @@ export default function AddBoardDialog({ open, onClose }: AddBoardDialogProps) {
     }
     createBoard(board, {
       onSuccess: (data) => {
-        onClose()
         router.push(`/dashboard/boards/${data.id}`)
       },
       onError: (error) => {
@@ -51,18 +51,10 @@ export default function AddBoardDialog({ open, onClose }: AddBoardDialogProps) {
     })
   }
 
-  useEffect(() => {
-    if (open) {
-      // Reset state when opening the dialog
-      setBoardName('')
-      setColumns([])
-    }
-  }, [open])
-
   return (
     <BoardForm
-      open={open}
-      onClose={onClose}
+      open
+      onClose={handleDialogClose}
       boardName={boardName}
       onBoardNameChange={handleBoardNameChange}
       columns={columns}

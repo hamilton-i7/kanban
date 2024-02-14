@@ -1,8 +1,15 @@
-import Menu from '@/app/components/Menu'
-import { ListItemText, MenuItem, MenuProps, Typography } from '@mui/material'
 import React from 'react'
+import Menu from '@/app/components/Menu'
+import {
+  ListItemButton,
+  ListItemText,
+  MenuItem,
+  MenuProps,
+} from '@mui/material'
+import Link from 'next/link'
 
 type BoardMenuProps = MenuProps & {
+  boardId: number
   onEditBoardClick?: () => void
   onDeleteBoardClick?: () => void
 }
@@ -11,6 +18,7 @@ export default function BoardMenu({
   anchorEl,
   open,
   onClose,
+  boardId,
   onEditBoardClick,
   onDeleteBoardClick,
   ...props
@@ -32,13 +40,18 @@ export default function BoardMenu({
       }}
       {...props}
     >
-      <MenuItem onClick={onEditBoardClick}>
-        <ListItemText
-          disableTypography
-          sx={{ typography: 'body-l', color: 'grey.500' }}
+      <MenuItem onClick={onEditBoardClick} disableGutters>
+        <ListItemButton
+          LinkComponent={Link}
+          href={`/dashboard/boards/${boardId}/edit`}
         >
-          Edit board
-        </ListItemText>
+          <ListItemText
+            disableTypography
+            sx={{ typography: 'body-l', color: 'grey.500' }}
+          >
+            Edit board
+          </ListItemText>
+        </ListItemButton>
       </MenuItem>
       <MenuItem onClick={onDeleteBoardClick}>
         <ListItemText

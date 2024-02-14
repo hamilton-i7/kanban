@@ -10,15 +10,11 @@ import { useGetBoard } from '../../../lib/hooks/board_hooks'
 
 type BoardTopBarProps = {
   boardId?: number
-  onCreateBoard?: () => void
-  onEditBoard?: () => void
   onDeleteBoard?: () => void
 }
 
 export default function BoardTopBar({
   boardId,
-  onCreateBoard,
-  onEditBoard,
   onDeleteBoard,
 }: BoardTopBarProps) {
   const params = useParams<{ boardId: string }>()
@@ -107,13 +103,11 @@ export default function BoardTopBar({
           <MoreVert />
         </IconButton>
         <BoardMenu
+          boardId={boardId ?? +params.boardId}
           anchorEl={anchorEl}
           open={openOptionsMenu}
           onClose={handleCloseOptionsMenu}
-          onEditBoardClick={() => {
-            onEditBoard?.()
-            handleCloseOptionsMenu()
-          }}
+          onEditBoardClick={handleCloseOptionsMenu}
           onDeleteBoardClick={() => {
             onDeleteBoard?.()
             handleCloseOptionsMenu()
@@ -126,10 +120,6 @@ export default function BoardTopBar({
           open={openSelectBoardMenu}
           onClose={handleCloseSelectBoardMenu}
           selectedBoard={board.id}
-          onCreateBoard={() => {
-            onCreateBoard?.()
-            handleCloseSelectBoardMenu()
-          }}
         />
       </Toolbar>
     </AppBar>
