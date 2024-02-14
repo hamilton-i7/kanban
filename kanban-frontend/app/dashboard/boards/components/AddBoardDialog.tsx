@@ -8,7 +8,7 @@ import BoardForm from './BoardForm'
 
 export default function AddBoardDialog() {
   const router = useRouter()
-  const { isPending, mutate: createBoard } = useCreateBoard()
+  const { mutate: createBoard } = useCreateBoard()
 
   const [boardName, setBoardName] = useState('')
   const [columns, setColumns] = useState<string[]>([])
@@ -33,7 +33,7 @@ export default function AddBoardDialog() {
   }
 
   const handleDialogClose = () => {
-    router.back()
+    router.back() // TODO: Change implementatio to use router.push
   }
 
   const handleCreateBoard = () => {

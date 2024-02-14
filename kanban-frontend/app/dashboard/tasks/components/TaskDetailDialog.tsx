@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Dialog from '@/app/components/Dialog'
 import {
   DialogTitle,
@@ -14,20 +14,26 @@ import {
 } from '@mui/material'
 import { MoreVert } from '@mui/icons-material'
 import SubtaskItem from './SubtaskItem'
-import { useParams, useRouter } from 'next/navigation'
-import { useGetTask } from '@/app/lib/hooks/task_hooks'
+import { useParams, usePathname, useRouter } from 'next/navigation'
+import { useGetBoardByTask, useGetTask } from '@/app/lib/hooks/task_hooks'
 import { useGetRelatedColumns } from '@/app/lib/hooks/column_hooks'
 import TaskMenu from './TaskMenu'
 
 export default function TaskDetailDialog() {
-  const router = useRouter()
   const params = useParams<{ taskId: string }>()
+  const TASK_DETAIL_PATHNAME = `/dashboard/tasks/${params.taskId}`
+  const pathname = usePathname()
+  const router = useRouter()
   const {
     isPending: isTaskPending,
     isError: isTaskError,
     error: taskError,
     data: task,
   } = useGetTask(+params.taskId)
+
+  const { data: board } = useGetBoardByTask(+params.taskId)
+
+  const boardId = board?.id
   const columnId = task?.column
 
   const {
@@ -41,7 +47,7 @@ export default function TaskDetailDialog() {
     task?.subtasks.map((subtask) => subtask.status).length ?? 0
   const totalSubtasks = task?.subtasks.length ?? 0
 
-  const [selectedColumn, setSelectedColumn] = useState(columnId)
+  const [selectedColumn] = useState(columnId)
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const openOptionsMenu = Boolean(anchorEl)
@@ -55,7 +61,17 @@ export default function TaskDetailDialog() {
   }
 
   const handleDialogClose = () => {
-    router.back()
+    router.push(`/dashboard/boards/${boardId}`)
+  }
+
+  useEffect(() => {
+    if (pathname === TASK_DETAIL_PATHNAME) {
+      // Reset states
+    }
+  }, [pathname, TASK_DETAIL_PATHNAME])
+
+  if (pathname !== TASK_DETAIL_PATHNAME) {
+    return null
   }
 
   if (isTaskPending || isColumnsPending) {
