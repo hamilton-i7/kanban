@@ -1,5 +1,6 @@
 from calendar import c
 from datetime import timedelta
+from turtle import position
 from django.utils import timezone
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
@@ -172,7 +173,7 @@ class BoardAPITests(APITestCase):
             {'id': columns[2].pk},
         ]
         response = client.patch(f'/tasks/boards/{board.pk}/columns/reorder/', data=data, format='json')
-        ordered_columns = Column.objects.filter(board=board.pk).order_by("position")
+        ordered_columns = Column.objects.filter(board=board.pk).order_by('position')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for i, column in enumerate(ordered_columns):
@@ -321,8 +322,8 @@ class BoardAPITests(APITestCase):
         board = Board.objects.create(name='Sample Board')
         columns = Column.objects.bulk_create(
             [
-                Column(name='Column 1', board=board),
-                Column(name='Column 2', board=board)
+                Column(name='Column 1', board=board, position=0),
+                Column(name='Column 2', board=board, position=1)
             ]
         )
         response = client.get(f'/tasks/boards/{board.id}/')
@@ -335,6 +336,7 @@ class BoardAPITests(APITestCase):
         for i, column in enumerate(columns):
             self.assertEqual(response.data['columns'][i]['id'], column.id)
             self.assertEqual(response.data['columns'][i]['name'], column.name)
+            self.assertEqual(column.position, i)
 
     def test_update_board_name_too_long(self):
         client = APIClient()
@@ -488,8 +490,8 @@ class BoardAPITests(APITestCase):
             'name': 'Test Board',
             'columns': [
                 {'id': columns[0].id, 'name': 'New Column 1'},
-                {'id': columns[1].id, 'name': 'New Column 2'},
                 {'name': 'New Column 3'},
+                {'id': columns[1].id, 'name': 'New Column 2'},
             ]
         }
 
@@ -504,7 +506,7 @@ class BoardAPITests(APITestCase):
         self.assertIn('name', response.data)
         self.assertEqual(response.data['name'], data['name'])
 
-        related_columns = Column.objects.filter(board=response.data['id'])
+        related_columns = Column.objects.filter(board=response.data['id']).order_by('position')
 
         self.assertIn('columns', response.data)
         
@@ -512,6 +514,11 @@ class BoardAPITests(APITestCase):
             if 'id' in data['columns']:
                 self.assertEqual(column.id, data['columns'][index]['id'])
             self.assertEqual(column.name, data['columns'][index]['name'])
+            self.assertEqual(column.position, index)
+
+        # Assert the response is sending the columns in the right order
+        for index, column in enumerate(response.data['columns']):
+            self.assertEqual(column['name'], data['columns'][index]['name'])
 
     def test_update_board_non_existing_columns(self):
         client = APIClient()

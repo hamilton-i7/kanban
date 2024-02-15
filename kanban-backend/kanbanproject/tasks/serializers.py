@@ -42,7 +42,7 @@ class BoardSerializer(DynamicFieldsModelSerializer):
         read_only_fields = ['created_at', 'last_modified']
 
     def get_columns(self, board):
-        columns = Column.objects.filter(board=board)
+        columns = Column.objects.filter(board=board).order_by('position')
         serializer = ColumnSerializer(columns, many=True)
         return serializer.data
 
@@ -52,22 +52,28 @@ class ColumnListSerializer(serializers.ListSerializer):
         columns = [Column(board=self.context['board'], position=i, **item) for i, item in enumerate(validated_data)]
         return Column.objects.bulk_create(columns)
 
-    def update(self, instance, validated_data):
-        # Maps for id->instance and id->data item.        
+    def update(self, instance, validated_data):        
         column_mapping: dict[int, Column] = {column.id: column for column in instance}
         data_mapping = {item['id']: item for item in validated_data if 'id' in item}
 
+        # Delete columns not found in new data
         for column_id, column in column_mapping.items():
             data = data_mapping.get(column_id)
-            if data:
-                column.name = data.get('name', column.name)
-                column.save()
-            else:
+            if not data:
                 column.delete()
                 
-        new_columns = [Column(board=self.context['board'], **item) for item in validated_data if 'id' not in item]
-        Column.objects.bulk_create(new_columns)
+        new_columns = []
+        for i, item in enumerate(validated_data):
+            if 'id' in item:
+                column = column_mapping.get(item['id'])
+                if column is not None:
+                    column.position = i
+                    column.name = item.get('name', column.name)
+                    column.save()
+            else:
+                new_columns.append(Column(board=self.context['board'], position=i, **item))
         
+        Column.objects.bulk_create(new_columns)        
         return instance
 
 
