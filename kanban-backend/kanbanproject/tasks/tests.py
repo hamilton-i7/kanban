@@ -232,9 +232,12 @@ class BoardAPITests(APITestCase):
         self.assertIn('name', response.data)
         self.assertEqual(response.data['name'], data['name'])
 
-        columns = Column.objects.filter(board=response.data['id'])
+        columns = Column.objects.filter(board=response.data['id']).order_by('position')
         self.assertIn('columns', response.data)
         self.assertEqual(len(columns), len(data['columns']))
+
+        for i, column in enumerate(columns):
+            self.assertEqual(column.name, data['columns'][i]['name'])
 
     def test_get_boards(self):
         client = APIClient()

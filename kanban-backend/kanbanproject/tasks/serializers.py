@@ -49,7 +49,7 @@ class BoardSerializer(DynamicFieldsModelSerializer):
 
 class ColumnListSerializer(serializers.ListSerializer):
     def create(self, validated_data):
-        columns = [Column(board=self.context['board'], **item) for item in validated_data]
+        columns = [Column(board=self.context['board'], position=i, **item) for i, item in enumerate(validated_data)]
         return Column.objects.bulk_create(columns)
 
     def update(self, instance, validated_data):
@@ -80,8 +80,8 @@ class ColumnSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Column
-        fields = ['id', 'name', 'position', 'tasks', 'created_at', 'last_modified']
-        read_only_fields = ['position', 'tasks', 'created_at', 'last_modified']
+        fields = ['id', 'name', 'tasks', 'created_at', 'last_modified']
+        read_only_fields = ['tasks', 'created_at', 'last_modified']
         list_serializer_class = ColumnListSerializer
 
     def get_fields(self):
