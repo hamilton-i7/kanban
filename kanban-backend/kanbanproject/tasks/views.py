@@ -1,17 +1,14 @@
-from django.db.models import Prefetch
-from django.http import HttpRequest
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Board, Column, Task, Subtask
-from .serializers import BoardSerializer, ColumnSerializer, TaskSerializer, SubtaskSerializer
+from .serializers import BoardSerializer, ColumnSerializer, ColumnReorderSerializer, TaskSerializer, SubtaskSerializer
 from .constants import BOARD_NOT_FOUND, BOARD_DELETED, TASK_NOT_FOUND, TASK_DELETED, COLUMN_NOT_FOUND
 
 # Create your views here.
 @api_view(['GET', 'POST'])
-def boards(request: HttpRequest):    
+def boards(request):    
     if request.method == 'GET':
         return get_boards()
     return create_board(request.data)
@@ -42,7 +39,7 @@ def create_board(data):
     return Response(board_serializer.data, status=status.HTTP_201_CREATED)
     
 @api_view(['GET', 'PATCH', 'DELETE'])
-def board_detail(request: HttpRequest, id: int):    
+def board_detail(request, id):    
     try:                
         board = Board.objects.get(pk=id)
     except Board.DoesNotExist:
@@ -67,7 +64,7 @@ def update_board(board: Board, data):
     serializer.save()
 
     old_columns = Column.objects.filter(board=board.id)
-    columns_data = data.get('columns', [])
+    columns_data = data.get('columns', [])    
     columns_serializer = ColumnSerializer(old_columns, data=columns_data, many=True, partial=True, context={'board': board})
 
     if not columns_serializer.is_valid():        
@@ -85,7 +82,7 @@ def delete_board(board: Board):
     return Response(data={'msg': BOARD_DELETED}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
-def create_task(request: HttpRequest):
+def create_task(request):
     serializer = TaskSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -105,7 +102,7 @@ def create_task(request: HttpRequest):
     return Response(data=task_serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['GET', 'PATCH', 'DELETE'])
-def task_detail(request: HttpRequest, id: int):
+def task_detail(request, id):
     try:                
         task = Task.objects.get(pk=id)
     except Task.DoesNotExist:
@@ -146,7 +143,7 @@ def delete_task(task: Task):
     return Response(data={'msg': TASK_DELETED}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
-def get_related_columns_by_column_id(_, id: int):
+def get_related_columns_by_column_id(_, id):
     try:                
         column = Column.objects.get(pk=id)
     except Column.DoesNotExist:
@@ -157,7 +154,7 @@ def get_related_columns_by_column_id(_, id: int):
     return Response(serializer.data)
 
 @api_view(['GET'])
-def get_related_board_by_task_id(_, id: int):
+def get_related_board_by_task_id(_, id):
     try:                
         task = Task.objects.get(pk=id)
     except Task.DoesNotExist:
@@ -166,3 +163,19 @@ def get_related_board_by_task_id(_, id: int):
     column = Column.objects.get(pk=task.column.pk)
     board = Board.objects.get(pk=column.board.pk)
     return get_board(board)
+
+@api_view(['PATCH'])
+def reorder_columns(request, id): 
+    try:                
+        board = Board.objects.get(pk=id)
+    except Board.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND, data={'error': BOARD_NOT_FOUND})    
+    
+    related_columns = Column.objects.filter(board=board.id)
+    columns_serializer = ColumnReorderSerializer(related_columns, data=request.data, many=True)
+
+    if not columns_serializer.is_valid():        
+        return Response(columns_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    columns_serializer.save()
+    return Response(columns_serializer.data)

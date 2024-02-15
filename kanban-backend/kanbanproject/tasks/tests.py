@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
 from .models import Board, Column, Task, Subtask
-from .serializers import BoardSerializer, ColumnSerializer, TaskSerializer, SubtaskSerializer
+from .serializers import BoardSerializer, ColumnSerializer, ColumnReorderSerializer, TaskSerializer, SubtaskSerializer
 from .constants import (
     BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED,
     COLUMN_NAME_MAX_LENGTH_ERROR,
@@ -103,6 +103,81 @@ class BoardAPITests(APITestCase):
         
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
+
+    def test_reorder_columns_invalid(self):
+        data = [
+            {'id': 'George'},
+            {'id': True},
+        ]
+        serializer = ColumnReorderSerializer(data=data, many=True)
+        
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)        
+        self.assertIn('id', context.exception.detail[0])
+        self.assertIn('id', context.exception.detail[1])     
+
+    def test_update_reorder_columns_invalid(self):
+        client = APIClient()
+        board = Board.objects.create(name='Sample Board')
+        data = [
+            {'id': 'George'},
+            {'id': True},
+        ]
+        response = client.patch(f'/tasks/boards/{board.pk}/columns/reorder/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('id', response.data[0])
+        self.assertIn('id', response.data[1])  
+
+    def test_reorder_columns_id_missing(self):
+        data = [
+            {'name': 'George'},
+            {'age': 23},
+        ]
+        serializer = ColumnReorderSerializer(data=data, many=True)
+        
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)                
+        self.assertIn('id', context.exception.detail[0])
+        self.assertIn('id', context.exception.detail[1])
+
+    def test_update_reorder_columns_id_missing(self):
+        client = APIClient()
+        board = Board.objects.create(name='Sample Board')
+        data = [
+            {'name': 'George'},
+            {'age': 23},
+        ]
+        response = client.patch(f'/tasks/boards/{board.pk}/columns/reorder/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('id', response.data[0])
+        self.assertIn('id', response.data[1])
+
+    def test_reorder_columns_success(self):
+        client = APIClient()
+        board = Board.objects.create(name='Sample Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board),
+                Column(name='Column 2', board=board),
+                Column(name='Column 3', board=board),
+                Column(name='Column 4', board=board),
+            ]
+        )
+        data = [
+            {'id': columns[1].pk},
+            {'id': columns[3].pk},
+            {'id': columns[0].pk},
+            {'id': columns[2].pk},
+        ]
+        response = client.patch(f'/tasks/boards/{board.pk}/columns/reorder/', data=data, format='json')
+        ordered_columns = Column.objects.filter(board=board.pk).order_by("position")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for i, column in enumerate(ordered_columns):
+            self.assertEqual(column.position, i)
+            self.assertEqual(data[i]['id'], column.pk)        
 
     def test_create_board_with_columns_name_too_long(self):
         client = APIClient()

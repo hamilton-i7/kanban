@@ -80,8 +80,8 @@ class ColumnSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Column
-        fields = ['id', 'name', 'tasks', 'created_at', 'last_modified']
-        read_only_fields = ['tasks', 'created_at', 'last_modified']
+        fields = ['id', 'name', 'position', 'tasks', 'created_at', 'last_modified']
+        read_only_fields = ['position', 'tasks', 'created_at', 'last_modified']
         list_serializer_class = ColumnListSerializer
 
     def get_fields(self):
@@ -95,6 +95,27 @@ class ColumnSerializer(DynamicFieldsModelSerializer):
         tasks = Task.objects.filter(column=column)
         serializer = TaskSummarySerializer(tasks, many=True)
         return serializer.data
+
+
+class ColumnReorderListSerializer(serializers.ListSerializer):
+    def update(self, instance, validated_data):
+        related_columns_map: dict[int, Column] = {column.id: column for column in instance}
+        for i, item in enumerate(validated_data):
+            column = related_columns_map.get(item['id'])
+            if column:
+                column.position = i
+                column.save()
+        return instance
+
+
+class ColumnReorderSerializer(serializers.ModelSerializer):  
+    id = serializers.IntegerField()
+
+    class Meta:
+        model = Column
+        fields = ['id', 'position']
+        read_only_fields = ['position']
+        list_serializer_class = ColumnReorderListSerializer
 
 
 class TaskSerializer(serializers.ModelSerializer):    
