@@ -1,4 +1,5 @@
 from datetime import timedelta
+from turtle import position
 from django.utils import timezone
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
@@ -471,11 +472,12 @@ class BoardAPITests(APITestCase):
         self.assertIn('name', response.data)
         self.assertEqual(response.data['name'], data['name'])
 
-        related_columns = Column.objects.filter(board=response.data['id'])
+        related_columns = Column.objects.filter(board=response.data['id']).order_by('position')
         self.assertIn('columns', response.data)
         
         for index, column in enumerate(related_columns):
             self.assertEqual(column.name, data['columns'][index]['name'])
+            self.assertEqual(column.position, index)
 
     def test_update_board_new_and_existing_columns(self):
         client = APIClient()
@@ -1285,8 +1287,8 @@ class BoardAPITests(APITestCase):
         )
         task = Task.objects.create(title='Sample Task', column=columns[0])
         subtasks = Subtask.objects.bulk_create([
-            Subtask(title='Subtask 1', task=task),
-            Subtask(title='Subtask 2', status=True, task=task),
+            Subtask(title='Subtask 1', task=task, position=0),
+            Subtask(title='Subtask 2', status=True, task=task, position=1),
         ])
         response = client.get(f'/tasks/items/{task.id}/')
 
@@ -1296,6 +1298,7 @@ class BoardAPITests(APITestCase):
         for i, subtask in enumerate(subtasks):
             self.assertEqual(response.data['subtasks'][i]['id'], subtask.id)
             self.assertEqual(response.data['subtasks'][i]['title'], subtask.title)
+            self.assertEqual(subtask.position, i)
 
     def test_update_task_with_subtasks_name_too_long(self):
         client = APIClient()
@@ -1416,11 +1419,12 @@ class BoardAPITests(APITestCase):
         self.assertIn('title', response.data)
         self.assertEqual(response.data['title'], data['title'])
 
-        related_subtasks = Subtask.objects.filter(task=response.data['id'])
+        related_subtasks = Subtask.objects.filter(task=response.data['id']).order_by('position')
         self.assertIn('subtasks', response.data)
         
         for index, subtask in enumerate(related_subtasks):
             self.assertEqual(subtask.title, data['subtasks'][index]['title'])
+            self.assertEqual(subtask.position, index)
 
     def test_update_task_new_and_existing_subtasks(self):
         client = APIClient()
@@ -1440,8 +1444,8 @@ class BoardAPITests(APITestCase):
             'title': 'Updated Task Title',
             'subtasks': [
                 {'id': subtasks[0].id, 'title': 'New Subtask 1'},
-                {'id': subtasks[1].id, 'title': 'New Subtask 2'},
                 {'title': 'New Subtask 3'},
+                {'id': subtasks[1].id, 'title': 'New Subtask 2'},
             ]
         }
 
@@ -1456,7 +1460,7 @@ class BoardAPITests(APITestCase):
         self.assertIn('title', response.data)
         self.assertEqual(response.data['title'], data['title'])
 
-        related_subtasks = Subtask.objects.filter(task=response.data['id'])
+        related_subtasks = Subtask.objects.filter(task=response.data['id']).order_by('position')
 
         self.assertIn('subtasks', response.data)
         
@@ -1464,6 +1468,7 @@ class BoardAPITests(APITestCase):
             if 'id' in data['subtasks']:
                 self.assertEqual(subtask.id, data['subtasks'][index]['id'])
             self.assertEqual(subtask.title, data['subtasks'][index]['title'])
+            self.assertEqual(subtask.position, index)
 
     def test_update_task_non_existing_subtasks(self):
         client = APIClient()

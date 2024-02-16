@@ -148,7 +148,7 @@ class TaskSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def get_subtasks(self, task):
-        subtasks = Subtask.objects.filter(task=task)
+        subtasks = Subtask.objects.filter(task=task).order_by('position')
         serializer = SubtaskSerializer(subtasks, many=True)
         return serializer.data
 
@@ -212,26 +212,31 @@ class TaskReorderSerializer(serializers.ModelSerializer):
 
 class SubtaskListSerializer(serializers.ListSerializer):
     def create(self, validated_data):
-        subtasks = [Subtask(task=self.context['task'], **item) for item in validated_data]
+        subtasks = [Subtask(task=self.context['task'], position=i, **item) for i, item in enumerate(validated_data)]
         return Subtask.objects.bulk_create(subtasks)
 
-    def update(self, instance, validated_data):
-        # Maps for id->instance and id->data item.        
+    def update(self, instance, validated_data):               
         subtask_mapping: dict[int, Subtask] = {subtask.id: subtask for subtask in instance}
         data_mapping = {item['id']: item for item in validated_data if 'id' in item}
 
         for subtask_id, subtask in subtask_mapping.items():
             data = data_mapping.get(subtask_id)
-            if data:
-                subtask.title = data.get('title', subtask.title)
-                subtask.status = data.get('status', subtask.status)
-                subtask.save()
-            else:
+            if not data:
                 subtask.delete()
-                
-        new_subtasks = [Subtask(task=self.context['task'], **item) for item in validated_data if 'id' not in item]
+
+        new_subtasks = []
+        for i, item in enumerate(validated_data):
+            if 'id' in item:
+                subtask = subtask_mapping.get(item['id'])
+                if subtask is not None:
+                    subtask.position = i
+                    subtask.title = item.get('title', subtask.title)
+                    subtask.status = data.get('status', subtask.status)
+                    subtask.save()
+            else:
+                new_subtasks.append(Subtask(task=self.context['task'], position=i, **item))
+            
         Subtask.objects.bulk_create(new_subtasks)
-        
         return instance
 
 
