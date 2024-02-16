@@ -3,8 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Board, Column, Task, Subtask
-from .serializers import BoardSerializer, ColumnSerializer, ColumnReorderSerializer, TaskSerializer, SubtaskSerializer
-from .constants import BOARD_NOT_FOUND, BOARD_DELETED, TASK_NOT_FOUND, TASK_DELETED, COLUMN_NOT_FOUND
+from .serializers import (
+    BoardSerializer,
+    ColumnSerializer, ColumnReorderSerializer,
+    TaskReorderSerializer, TaskSerializer,
+    SubtaskSerializer
+)
+from .constants import BOARD_NOT_FOUND, BOARD_DELETED, TASK_NOT_FOUND, TASK_DELETED, COLUMN_NOT_FOUND, COLUMN_MISMATCH_ERROR
 
 # Create your views here.
 @api_view(['GET', 'POST'])
@@ -79,7 +84,7 @@ def update_board(board: Board, data):
 
 def delete_board(board: Board):
     board.delete()
-    return Response(data={'msg': BOARD_DELETED}, status=status.HTTP_204_NO_CONTENT)
+    return Response(data={'message': BOARD_DELETED}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
 def create_task(request):
@@ -140,7 +145,7 @@ def update_task(task: Task, data):
 
 def delete_task(task: Task):
     task.delete()
-    return Response(data={'msg': TASK_DELETED}, status=status.HTTP_204_NO_CONTENT)
+    return Response(data={'message': TASK_DELETED}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
 def get_related_columns_by_column_id(_, id):
@@ -169,7 +174,7 @@ def reorder_columns(request, id):
     try:                
         board = Board.objects.get(pk=id)
     except Board.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND, data={'error': BOARD_NOT_FOUND})    
+        return Response(status=status.HTTP_404_NOT_FOUND, data={'error': BOARD_NOT_FOUND})
     
     related_columns = Column.objects.filter(board=board.id)
     columns_serializer = ColumnReorderSerializer(related_columns, data=request.data, many=True)
@@ -179,3 +184,31 @@ def reorder_columns(request, id):
     
     columns_serializer.save()
     return Response(columns_serializer.data)
+
+@api_view(['PATCH'])
+def reorder_task(request, id):
+    column_id = request.data.get('column')
+
+    if column_id is not None and type(column_id) is int:
+        try:
+            target_column = Column.objects.select_related('board').get(pk=column_id)
+        except Column.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'error': COLUMN_NOT_FOUND})
+        
+    try:                
+        task = Task.objects.get(pk=id)                
+    except Task.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND, data={'error': TASK_NOT_FOUND})    
+    
+    task_reorder_serializer = TaskReorderSerializer(task, data=request.data)
+    if not task_reorder_serializer.is_valid():
+        return Response(task_reorder_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    current_board_id = task.column.board.pk
+    target_board_id = target_column.board.pk
+
+    if current_board_id != target_board_id:
+        return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': COLUMN_MISMATCH_ERROR})  
+
+    task_reorder_serializer.save()  
+    return Response(task_reorder_serializer.data)

@@ -146,12 +146,56 @@ class TaskSummarySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Task
-        fields = ['id', 'title', 'subtasks']        
+        fields = ['id', 'title', 'subtasks']
 
     def get_subtasks(self, task):
         subtasks = Subtask.objects.filter(task=task)
         serializer = SubtaskSummarySerializer(subtasks, many=True)
         return serializer.data
+
+
+class TaskReorderSerializer(serializers.ModelSerializer):
+    position = serializers.IntegerField(min_value=0)    
+
+    class Meta:
+        model = Task
+        fields = ['id', 'column', 'position']
+
+    def update(self, instance, validated_data):
+        current_column = instance.column
+        target_column = Column.objects.prefetch_related('tasks').get(pk=validated_data['column'].pk)
+        target_column_related_tasks = target_column.tasks.all().order_by('position')
+        target_position = len(target_column_related_tasks) if validated_data['position'] > len(target_column_related_tasks) else validated_data['position']                
+        if current_column.pk == target_column.pk:
+            self.reorder_same_column(instance, target_column_related_tasks, target_position)
+        else:
+            self.reorder_different_columns(instance, current_column, target_column, target_column_related_tasks, target_position)
+        return instance
+
+    def reorder_same_column(self, instance, related_tasks, position):
+        filtered_column_tasks = [current_task for current_task in related_tasks if current_task.pk != instance.pk]
+        target_column_tasks = filtered_column_tasks[:position] + [instance] + filtered_column_tasks[position:]        
+        for i, task in enumerate(target_column_tasks):
+            task.position = i            
+        Task.objects.bulk_update(target_column_tasks, ['position'])        
+
+    def reorder_different_columns(self, instance, column_from: Column, column_to: Column, related_tasks, position):
+        current_column_tasks = Task.objects.filter(column=column_from).order_by('position')
+        filtered_column_tasks = [current_task for current_task in current_column_tasks if current_task.pk != instance.pk]
+        target_column_tasks = related_tasks[:position] + [instance] + related_tasks[position:]
+
+        # Reassign positions to the remaining tasks from the original column
+        for i, task in enumerate(filtered_column_tasks):
+            task.position = i
+        Task.objects.bulk_update(filtered_column_tasks, ['position'])
+
+        for i, task in enumerate(target_column_tasks):
+            task.position = i
+        Task.objects.bulk_update(target_column_tasks, ['position'])
+
+        # Update the task's column to belong to the target column
+        instance.column = column_to
+        instance.save()
 
 
 class SubtaskListSerializer(serializers.ListSerializer):

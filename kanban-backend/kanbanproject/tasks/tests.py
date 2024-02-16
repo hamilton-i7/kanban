@@ -1,6 +1,4 @@
-from calendar import c
 from datetime import timedelta
-from turtle import position
 from django.utils import timezone
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
@@ -10,8 +8,8 @@ from .models import Board, Column, Task, Subtask
 from .serializers import BoardSerializer, ColumnSerializer, ColumnReorderSerializer, TaskSerializer, SubtaskSerializer
 from .constants import (
     BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED,
-    COLUMN_NAME_MAX_LENGTH_ERROR,
-    TASK_TITLE_MAX_LENGTH_ERROR, TASK_NOT_FOUND, TASK_DELETED,
+    COLUMN_NAME_MAX_LENGTH_ERROR, COLUMN_MISMATCH_ERROR, COLUMN_NOT_FOUND,
+    TASK_TITLE_MAX_LENGTH_ERROR, TASK_NOT_FOUND, TASK_DELETED, TASK_OUT_OF_BOUNDS_ERROR,
     SUBTASK_NAME_MAX_LENGTH_ERROR
 )
 
@@ -610,7 +608,7 @@ class BoardAPITests(APITestCase):
         response = client.delete(f'/tasks/boards/{board_1.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(response.data['msg'], BOARD_DELETED)
+        self.assertEqual(response.data['message'], BOARD_DELETED)
         with self.assertRaises(Board.DoesNotExist):
             Board.objects.get(id=board_1.id)
 
@@ -783,12 +781,311 @@ class BoardAPITests(APITestCase):
         response = client.delete(f'/tasks/items/{task_1.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(response.data['msg'], TASK_DELETED)
+        self.assertEqual(response.data['message'], TASK_DELETED)
         with self.assertRaises(Task.DoesNotExist):
             Task.objects.get(id=task_1.id)
 
         created_task = Task.objects.get(id=task_2.id)
         self.assertEqual(created_task.id, task_2.id)
+
+    def test_update_reorder_tasks_missing_required_fields(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'age': 23,
+            'position': 10_000
+        }
+        response = client.patch(f'/tasks/items/{tasks[2].id}/reorder/', data=data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_reorder_tasks_position_out_of_bounds_same_column(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': columns[1].id,
+            'position': 10_000
+        }
+        response = client.patch(f'/tasks/items/{tasks[2].id}/reorder/', data=data, format='json')
+        related_tasks = Task.objects.filter(column=columns[1])
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['position'], len(related_tasks) - 1)
+
+    def test_update_reorder_tasks_position_out_of_bounds_different_columns(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': columns[0].id,
+            'position': 10_000
+        }
+        response = client.patch(f'/tasks/items/{tasks[2].id}/reorder/', data=data, format='json')
+        related_tasks = Task.objects.filter(column=columns[0])
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['position'], len(related_tasks) - 1)
+
+    def test_update_reorder_tasks_invalid(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': True,
+            'position': 'hello'
+        }
+        response = client.patch(f'/tasks/items/{tasks[2].id}/reorder/', data=data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_reorder_tasks_task_not_found(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': columns[1].id,
+            'position': 2
+        }
+        response = client.patch('/tasks/items/0/reorder/', data=data, format='json')        
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], TASK_NOT_FOUND)
+
+    def test_update_reorder_tasks_column_not_found(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': 30_000,
+            'position': 2
+        }
+        response = client.patch(f'/tasks/items/{tasks[2].id}/reorder/', data=data, format='json')        
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)        
+        self.assertEqual(response.data['error'], COLUMN_NOT_FOUND)
+
+    def test_update_reorder_tasks_column_mismatch(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': columns[2].id,
+            'position': 2
+        }
+        response = client.patch(f'/tasks/items/{tasks[2].id}/reorder/', data=data, format='json')        
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], COLUMN_MISMATCH_ERROR)
+
+    def test_update_reorder_tasks_same_column_success(self):
+        client = APIClient()
+        board = Board.objects.create(name='Sample Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board, position=0),
+                Column(name='Column 2', board=board, position=1),
+                Column(name='Column 3', board=board, position=2),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': columns[1].id,
+            'position': 2
+        }
+        response = client.patch(f'/tasks/items/{tasks[2].id}/reorder/', data=data, format='json')
+        column_related_tasks = Task.objects.filter(column=columns[1]).order_by('position')        
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)        
+        self.assertEqual(response.data['position'], data['position'])
+
+        for i, task in enumerate(column_related_tasks):
+            self.assertEqual(task.position, i)            
+
+    def test_update_reorder_tasks_different_columns_success(self):
+        client = APIClient()
+        board = Board.objects.create(name='Sample Board')
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=board, position=0),
+                Column(name='Column 2', board=board, position=1),
+                Column(name='Column 3', board=board, position=2),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {
+            'column': columns[1].id,
+            'position': 1
+        }
+        response = client.patch(f'/tasks/items/{tasks[0].id}/reorder/', data=data, format='json')
+        old_column_related_tasks = Task.objects.filter(column=columns[0]).order_by('position')
+        new_column_related_tasks = Task.objects.filter(column=columns[1]).order_by('position')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(old_column_related_tasks), 1)
+        self.assertEqual(len(new_column_related_tasks), 4)
+        self.assertEqual(response.data['position'], data['position'])
+
+        for i, task in enumerate(old_column_related_tasks):
+            self.assertEqual(task.position, i)
+
+        for i, task in enumerate(new_column_related_tasks):
+            self.assertEqual(task.position, i)
 
     def test_subtask_title_too_long(self):
         data = {'title': 'A' * (Subtask._meta.get_field('title').max_length + 1)}
