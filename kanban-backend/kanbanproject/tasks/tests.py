@@ -9,7 +9,7 @@ from .serializers import BoardSerializer, ColumnSerializer, ColumnReorderSeriali
 from .constants import (
     BOARD_NAME_MAX_LENGTH_ERROR, BOARD_NOT_FOUND, BOARD_DELETED,
     COLUMN_NAME_MAX_LENGTH_ERROR, COLUMN_MISMATCH_ERROR, COLUMN_NOT_FOUND,
-    TASK_TITLE_MAX_LENGTH_ERROR, TASK_NOT_FOUND, TASK_DELETED, TASK_OUT_OF_BOUNDS_ERROR,
+    TASK_TITLE_MAX_LENGTH_ERROR, TASK_NOT_FOUND, TASK_DELETED,
     SUBTASK_NAME_MAX_LENGTH_ERROR
 )
 
@@ -718,22 +718,91 @@ class BoardAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data['error'], TASK_NOT_FOUND)
 
-    def test_update_task_success(self):
-        client = APIClient()        
-        board = Board.objects.create(name='Test Board')
-        columns = Column.objects.bulk_create(
+    def test_update_task_column_mismatch(self):
+        client = APIClient()
+        boards = Board.objects.bulk_create(
             [
-                Column(name='Column 1', board=board),
-                Column(name='Column 2', board=board)
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
             ]
         )
-        task = Task.objects.create(title='Sample Task', column=columns[0])
-        data = {'column': columns[1].id, 'description': 'New description.'}
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        task = Task.objects.create(title='Sample Task 3', column=columns[1], position=0)
+        data = {
+            'column': columns[2].id,
+        }
         response = client.patch(f'/tasks/items/{task.id}/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], COLUMN_MISMATCH_ERROR)        
+
+    def test_update_task_same_column(self):
+        client = APIClient()        
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {'column': columns[1].id}
+        response = client.patch(f'/tasks/items/{tasks[3].id}/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['position'], tasks[3].position)
+
+    def test_update_task_success(self):
+        client = APIClient()        
+        boards = Board.objects.bulk_create(
+            [
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
+            ]
+        )
+        columns = Column.objects.bulk_create(
+            [
+                Column(name='Column 1', board=boards[0], position=0),
+                Column(name='Column 2', board=boards[0], position=1),
+                Column(name='Column 3', board=boards[1], position=0),
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(title='Sample Task 1', column=columns[0], position=0),
+                Task(title='Sample Task 2', column=columns[0], position=1),
+                Task(title='Sample Task 3', column=columns[1], position=0),
+                Task(title='Sample Task 4', column=columns[1], position=1),
+                Task(title='Sample Task 5', column=columns[1], position=2),
+            ]
+        )
+        data = {'column': columns[0].id, 'description': 'New description.'}
+        response = client.patch(f'/tasks/items/{tasks[2].id}/', data=data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)         
         self.assertEqual(response.data['description'], data['description'])
         self.assertEqual(response.data['column'], data['column'])
+        self.assertEqual(response.data['position'], 2)
 
     def test_get_task_not_found(self):
         client = APIClient()
@@ -933,7 +1002,7 @@ class BoardAPITests(APITestCase):
                 Column(name='Column 3', board=boards[1], position=0),
             ]
         )
-        tasks = Task.objects.bulk_create(
+        Task.objects.bulk_create(
             [
                 Task(title='Sample Task 1', column=columns[0], position=0),
                 Task(title='Sample Task 2', column=columns[0], position=1),

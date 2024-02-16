@@ -124,10 +124,23 @@ def get_task(task: Task):
     return Response(serializer.data)
 
 def update_task(task: Task, data):
+    column_id = data.get('column')
+
+    if column_id is not None and type(column_id) is int:
+        try:
+            target_column = Column.objects.select_related('board').get(pk=column_id)
+            current_board_id = task.column.board.pk
+            target_board_id = target_column.board.pk
+
+            if current_board_id != target_board_id:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': COLUMN_MISMATCH_ERROR})
+        except Column.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'error': COLUMN_NOT_FOUND})
+        
     serializer = TaskSerializer(task, data=data, partial=True)
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)                
+
     serializer.save()
 
     old_subtasks = Subtask.objects.filter(task=task.id)
@@ -208,7 +221,7 @@ def reorder_task(request, id):
     target_board_id = target_column.board.pk
 
     if current_board_id != target_board_id:
-        return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': COLUMN_MISMATCH_ERROR})  
+        return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': COLUMN_MISMATCH_ERROR})
 
     task_reorder_serializer.save()  
     return Response(task_reorder_serializer.data)

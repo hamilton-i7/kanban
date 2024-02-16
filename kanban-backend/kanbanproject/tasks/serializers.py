@@ -132,8 +132,20 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ['id', 'title', 'description', 'column', 'subtasks', 'created_at', 'last_modified']
-        read_only_fields = ['created_at', 'last_modified']
+        fields = ['id', 'title', 'description', 'column', 'position', 'subtasks', 'created_at', 'last_modified']
+        read_only_fields = ['position', 'created_at', 'last_modified']
+
+    def update(self, instance, validated_data):        
+        if not validated_data.get('column'):            
+            return super().update(instance, validated_data)
+        if instance.column.pk == validated_data['column'].pk:
+            return super().update(instance, validated_data)
+        
+        target_column = Column.objects.prefetch_related('tasks').get(pk=validated_data['column'].pk)
+        target_column_related_tasks_len = target_column.tasks.all().count()
+        instance.position = target_column_related_tasks_len
+        instance.save()
+        return super().update(instance, validated_data)
 
     def get_subtasks(self, task):
         subtasks = Subtask.objects.filter(task=task)
