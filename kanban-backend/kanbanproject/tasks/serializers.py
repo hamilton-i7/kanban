@@ -98,7 +98,7 @@ class ColumnSerializer(DynamicFieldsModelSerializer):
         return fields
     
     def get_tasks(self, column):
-        tasks = Task.objects.filter(column=column)
+        tasks = Task.objects.filter(column=column).order_by('position')
         serializer = TaskSummarySerializer(tasks, many=True)
         return serializer.data
 
@@ -161,7 +161,7 @@ class TaskSummarySerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'subtasks']
 
     def get_subtasks(self, task):
-        subtasks = Subtask.objects.filter(task=task)
+        subtasks = Subtask.objects.filter(task=task).order_by('position')
         serializer = SubtaskSummarySerializer(subtasks, many=True)
         return serializer.data
 

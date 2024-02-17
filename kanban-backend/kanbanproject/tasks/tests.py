@@ -277,44 +277,66 @@ class BoardAPITests(APITestCase):
         Assert the retrieved board is displaying only the necessary data.
         """
         client = APIClient()
-        board = Board.objects.create(name='Sample Board')
-        columns = Column.objects.bulk_create(
+        boards = Board.objects.bulk_create(
             [
-                Column(name='Column 1', board=board),
-                Column(name='Column 2', board=board)
+                Board(name='Sample Board 1'),
+                Board(name='Sample Board 2'),
             ]
         )
-        task = Task.objects.create(title='Sample Task', column=columns[0])
-        subtasks = Subtask.objects.bulk_create([
-            Subtask(title='Subtask 1', task=task),
-            Subtask(title='Subtask 2', status=True, task=task),
-        ])
-        response = client.get(f'/tasks/boards/{board.id}/')
+        columns = Column.objects.bulk_create(
+            [
+                Column(
+                    name=f'Column {i+1}',
+                    board=boards[0],
+                    position=4-i
+                ) for i in range(5)
+            ]
+        )
+        tasks = Task.objects.bulk_create(
+            [
+                Task(
+                    title=f'Sample Task {i+1}',
+                    column=columns[0],
+                    position=9-i
+                ) for i in range(10)                
+            ]
+        )        
+        subtasks = Subtask.objects.bulk_create(
+            [
+                Subtask(
+                    title=f'Sample Subtask {i+1}',
+                    task=tasks[0],
+                    position=19-i
+                ) for i in range(20)
+            ]
+        )
+        response = client.get(f'/tasks/boards/{boards[0].id}/')
 
-        self.assertEqual(response.data['id'], board.id)
-        self.assertEqual(response.data['name'], board.name)
+        self.assertEqual(response.data['id'], boards[0].id)
+        self.assertEqual(response.data['name'], boards[0].name)
         self.assertIn('created_at', response.data)
         self.assertIn('last_modified', response.data)
         
         self.assertNotIn('board', response.data['columns'][0])
-
-        for i, column in enumerate(columns):
-            self.assertEqual(response.data['columns'][i]['id'], column.id)
-            self.assertEqual(response.data['columns'][i]['name'], column.name)
         
-        self.assertEqual(response.data['columns'][0]['tasks'][0]['title'], task.title)
-        self.assertNotIn('description', response.data['columns'][0]['tasks'][0])
-        self.assertNotIn('column', response.data['columns'][0]['tasks'][0])
-        self.assertNotIn('created_at', response.data['columns'][0]['tasks'][0])
-        self.assertNotIn('last_modified', response.data['columns'][0]['tasks'][0])
+        for i, column in enumerate(reversed(response.data['columns'])):            
+            self.assertEqual(column['name'], f'Column {i+1}')
+                
+        self.assertIn('title', response.data['columns'][len(columns)-1]['tasks'][0])
+        self.assertNotIn('description', response.data['columns'][len(columns)-1]['tasks'][0])
+        self.assertNotIn('column', response.data['columns'][len(columns)-1]['tasks'][0])
+        self.assertNotIn('created_at', response.data['columns'][len(columns)-1]['tasks'][0])
+        self.assertNotIn('last_modified', response.data['columns'][len(columns)-1]['tasks'][0])
+        
+        self.assertNotIn('task', response.data['columns'][len(columns)-1]['tasks'][len(tasks)-1]['subtasks'][0])
+        self.assertNotIn('created_at', response.data['columns'][len(columns)-1]['tasks'][len(tasks)-1]['subtasks'][0])
+        self.assertNotIn('last_modified', response.data['columns'][len(columns)-1]['tasks'][len(tasks)-1]['subtasks'][0])
 
-        self.assertNotIn('task', response.data['columns'][0]['tasks'][0]['subtasks'][0])
-        self.assertNotIn('created_at', response.data['columns'][0]['tasks'][0]['subtasks'][0])
-        self.assertNotIn('last_modified', response.data['columns'][0]['tasks'][0]['subtasks'][0])
+        for i, task in enumerate(reversed(response.data['columns'][len(columns)-1]['tasks'])):
+            self.assertEqual(task['title'], f'Sample Task {i+1}')
 
-        for i, subtask in enumerate(subtasks):
-            self.assertEqual(response.data['columns'][0]['tasks'][0]['subtasks'][i]['id'], subtask.id)
-            self.assertEqual(response.data['columns'][0]['tasks'][0]['subtasks'][i]['title'], subtask.title)
+        for i, subtask in enumerate(reversed(response.data['columns'][len(columns)-1]['tasks'][len(tasks)-1]['subtasks'])):
+            self.assertEqual(subtask['title'], f'Sample Subtask {i+1}')
 
     def test_get_board_with_columns(self):        
         client = APIClient()
