@@ -8,11 +8,7 @@ export type Board = {
 export type BoardPreview = Pick<Board, 'id' | 'name'>
 
 export type DetailedBoard = Board & {
-  columns: (Omit<Column, 'board_id'> & {
-    tasks: (Pick<Task, 'id' | 'title'> & {
-      subtasks: Pick<Subtask, 'id' | 'title' | 'status'>[]
-    })[]
-  })[]
+  columns: ColumnBoardContext[]
 }
 
 export type CreateBoard = Pick<Board, 'name'> & {
@@ -37,6 +33,12 @@ export type Column = {
 export type ColumnPreview = {
   id: number
   name: string
+}
+
+export type ColumnBoardContext = Omit<Column, 'board_id'> & {
+  tasks: (Pick<Task, 'title' | 'id'> & {
+    subtasks: Pick<Subtask, 'title' | 'id' | 'status'>[]
+  })[]
 }
 
 export type Task = {

@@ -5,9 +5,10 @@ import {
   editBoard,
   getBoard,
   getBoards,
+  reorderColumns,
 } from '../api/board_api'
 import { BOARDS_KEY, SINGLE_BOARD_KEY } from '../constants'
-import { CreateBoard, EditBoard } from '../models'
+import { Column, CreateBoard, EditBoard } from '../models'
 
 const useGetBoards = () => {
   return useQuery({
@@ -41,10 +42,20 @@ const useEditBoard = (boardId: number) => {
 }
 
 const useDeleteBoard = () => {
+  return useMutation({
+    mutationFn: (boardId: number) => deleteBoard(boardId),
+  })
+}
+
+const useReorderColumns = (boardId: number) => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (boardId: number) => deleteBoard(boardId),
+    mutationFn: (columns: Pick<Column, 'id'>[]) =>
+      reorderColumns(boardId, columns),
+    onSuccess: (data) => {
+      queryClient.setQueryData([SINGLE_BOARD_KEY, boardId], data)
+    },
   })
 }
 
@@ -54,4 +65,5 @@ export {
   useCreateBoard,
   useEditBoard,
   useDeleteBoard,
+  useReorderColumns,
 }

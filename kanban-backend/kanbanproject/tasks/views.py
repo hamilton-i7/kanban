@@ -46,7 +46,7 @@ def create_board(data):
 @api_view(['GET', 'PATCH', 'DELETE'])
 def board_detail(request, id):    
     try:                
-        board = Board.objects.get(pk=id)
+        board = Board.objects.prefetch_related('columns').get(pk=id)
     except Board.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND, data={'error': BOARD_NOT_FOUND})    
     
@@ -68,7 +68,7 @@ def update_board(board: Board, data):
     
     serializer.save()
 
-    old_columns = Column.objects.filter(board=board.id)
+    old_columns = board.columns.all()
     columns_data = data.get('columns', [])    
     columns_serializer = ColumnSerializer(old_columns, data=columns_data, many=True, partial=True, context={'board': board})
 
@@ -77,8 +77,8 @@ def update_board(board: Board, data):
     
     columns_serializer.save()            
     
-    board_with_columns = Board.objects.prefetch_related('columns').get(pk=board.id)
-    board_serializer = BoardSerializer(board_with_columns)
+    detailed_board = Board.objects.prefetch_related('columns__tasks__subtasks').get(pk=board.id)
+    board_serializer = BoardSerializer(detailed_board)
 
     return Response(board_serializer.data, status=status.HTTP_200_OK)
 
@@ -185,18 +185,19 @@ def get_related_board_by_task_id(_, id):
 @api_view(['PATCH'])
 def reorder_columns(request, id): 
     try:                
-        board = Board.objects.get(pk=id)
+        board = Board.objects.prefetch_related('columns__tasks__subtasks').get(pk=id)
     except Board.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND, data={'error': BOARD_NOT_FOUND})
     
-    related_columns = Column.objects.filter(board=board.id)
+    related_columns = board.columns.all()
     columns_serializer = ColumnReorderSerializer(related_columns, data=request.data, many=True)
 
     if not columns_serializer.is_valid():        
         return Response(columns_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     columns_serializer.save()
-    return Response(columns_serializer.data)
+    board_serializer = BoardSerializer(board)
+    return Response(board_serializer.data)
 
 @api_view(['PATCH'])
 def reorder_task(request, id):

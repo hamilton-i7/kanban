@@ -1,6 +1,7 @@
 import {
   BoardPreview,
   BoardWithColumns,
+  Column,
   CreateBoard,
   DetailedBoard,
   EditBoard,
@@ -28,7 +29,7 @@ export const createBoard = async (board: CreateBoard) => {
 }
 
 export const editBoard = async (id: number, board: EditBoard) => {
-  const response = await axiosInstance.patch<BoardWithColumns>(
+  const response = await axiosInstance.patch<DetailedBoard>(
     `/tasks/boards/${id}/`,
     board
   )
@@ -38,6 +39,17 @@ export const editBoard = async (id: number, board: EditBoard) => {
 export const deleteBoard = async (id: number) => {
   const response = await axiosInstance.delete<{ msg: string }>(
     `/tasks/boards/${id}/`
+  )
+  return response.data
+}
+
+export const reorderColumns = async (
+  id: number,
+  columns: Pick<Column, 'id'>[]
+) => {
+  const response = await axiosInstance.patch<DetailedBoard>(
+    `/tasks/boards/${id}/columns/reorder/`,
+    columns
   )
   return response.data
 }

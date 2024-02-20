@@ -63,17 +63,19 @@ class ColumnListSerializer(serializers.ListSerializer):
                 column.delete()
                 
         new_columns = []
+        columns_to_update = []
         for i, item in enumerate(validated_data):
             if 'id' in item:
                 column = column_mapping.get(item['id'])
                 if column is not None:
                     column.position = i
                     column.name = item.get('name', column.name)
-                    column.save()
+                    columns_to_update.append(column)
             else:
                 new_columns.append(Column(board=self.context['board'], position=i, **item))
         
-        Column.objects.bulk_create(new_columns)        
+        Column.objects.bulk_create(new_columns)
+        Column.objects.bulk_update(columns_to_update, ['name', 'position'])
         return instance
 
 
@@ -106,11 +108,13 @@ class ColumnSerializer(DynamicFieldsModelSerializer):
 class ColumnReorderListSerializer(serializers.ListSerializer):
     def update(self, instance, validated_data):
         related_columns_map: dict[int, Column] = {column.id: column for column in instance}
+        columns_to_update = []
         for i, item in enumerate(validated_data):
             column = related_columns_map.get(item['id'])
             if column:
                 column.position = i
-                column.save()
+                columns_to_update.append(column)
+        Column.objects.bulk_update(columns_to_update, ['position'])
         return instance
 
 

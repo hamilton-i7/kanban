@@ -1,30 +1,52 @@
 import React from 'react'
-import { Close } from '@mui/icons-material'
 import {
   DialogTitle,
   DialogContent,
   Typography,
   TextField,
   Stack,
-  Box,
-  IconButton,
   DialogActions,
 } from '@mui/material'
 import FilledButton from '@/app/components/button/FilledButton'
 import TonalButton from '@/app/components/button/TonalButton'
 import Dialog from '@/app/components/Dialog'
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from '@dnd-kit/modifiers'
+import { Column } from '@/app/lib/models'
+import SortableColumnField, {
+  ColumnField,
+  ColumnFieldWrapper,
+} from './SortableColumnField'
+import { createPortal } from 'react-dom'
 
 type BoardFormProps = {
   open: boolean
   onClose: () => void
   boardName?: string
   onBoardNameChange?: (name: string) => void
-  columns?: string[]
-  onColumnUpdate?: (index: number, name: string) => void
+  columnFields?: Pick<Column, 'id' | 'name'>[]
+  activeColumnField: Pick<Column, 'id' | 'name'> | null
+  onColumnUpdate?: (columnId: number, name: string) => void
   onColumnAdd?: () => void
-  onColumnDelete?: (index: number) => void
+  onColumnDelete?: (columnId: number) => void
   onConfirmClick?: () => void
   variant?: 'create' | 'edit'
+  onColumnFieldDragStart?: (event: DragStartEvent) => void
+  onColumnFieldDragEnd?: (event: DragEndEvent) => void
 }
 
 export default function BoardForm({
@@ -32,13 +54,18 @@ export default function BoardForm({
   onClose,
   boardName = '',
   onBoardNameChange = () => {},
-  columns = [],
+  columnFields = [],
+  activeColumnField,
   onColumnUpdate = () => {},
   onColumnAdd = () => {},
   onColumnDelete = () => {},
   onConfirmClick,
   variant = 'create',
+  onColumnFieldDragStart,
+  onColumnFieldDragEnd,
 }: BoardFormProps) {
+  const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor))
+
   return (
     <Dialog open={open} onClose={onClose} PaperProps={{ component: 'form' }}>
       <DialogTitle
@@ -74,7 +101,7 @@ export default function BoardForm({
           }}
         />
 
-        {columns.length > 0 && (
+        {columnFields.length > 0 && (
           <>
             <Typography
               variant="body-m"
@@ -86,29 +113,39 @@ export default function BoardForm({
               Board columns
             </Typography>
             <Stack spacing={3}>
-              {columns.map((name, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TextField
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    value={name}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                      onColumnUpdate(index, event.target.value)
-                    }
-                    InputProps={{
-                      sx: { typography: 'body-l', color: 'common.black' },
-                    }}
-                  />
-                  <IconButton
-                    aria-label="Delete column"
-                    onClick={() => onColumnDelete(index)}
-                    sx={{ ml: (theme) => theme.spacing(1) }}
-                  >
-                    <Close sx={{ color: 'grey.500' }} />
-                  </IconButton>
-                </Box>
-              ))}
+              <DndContext
+                collisionDetection={closestCenter}
+                sensors={sensors}
+                onDragStart={onColumnFieldDragStart}
+                onDragEnd={onColumnFieldDragEnd}
+                modifiers={[restrictToVerticalAxis]}
+              >
+                <SortableContext
+                  items={columnFields.map((columnField) =>
+                    columnField.id.toString()
+                  )}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {columnFields.map((columnField) => (
+                    <SortableColumnField
+                      key={columnField.id}
+                      column={columnField}
+                      onNameChange={onColumnUpdate}
+                      onColumnDelete={onColumnDelete}
+                    />
+                  ))}
+                </SortableContext>
+                {createPortal(
+                  <DragOverlay modifiers={[restrictToParentElement]}>
+                    {activeColumnField ? (
+                      <ColumnFieldWrapper>
+                        <ColumnField column={activeColumnField} />
+                      </ColumnFieldWrapper>
+                    ) : null}
+                  </DragOverlay>,
+                  document.body
+                )}
+              </DndContext>
             </Stack>
           </>
         )}

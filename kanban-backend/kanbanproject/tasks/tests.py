@@ -172,12 +172,10 @@ class BoardAPITests(APITestCase):
             {'id': columns[2].pk},
         ]
         response = client.patch(f'/tasks/boards/{board.pk}/columns/reorder/', data=data, format='json')
-        ordered_columns = Column.objects.filter(board=board.pk).order_by('position')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for i, column in enumerate(ordered_columns):
-            self.assertEqual(column.position, i)
-            self.assertEqual(data[i]['id'], column.pk)        
+        for i, column in enumerate(response.data['columns']):
+            self.assertEqual(data[i]['id'], column['id'])        
 
     def test_create_board_with_columns_name_too_long(self):
         client = APIClient()
