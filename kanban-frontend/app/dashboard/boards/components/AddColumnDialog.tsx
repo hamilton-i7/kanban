@@ -87,8 +87,8 @@ export default function AddColumnDialog({
         />
       </DialogContent>
       <DialogActions>
-        <TonalButton label="Cancel" onClick={onClose} />
-        <FilledButton label="Create" onClick={handleCreateColumn} />
+        <TonalButton onClick={onClose}>Cancel</TonalButton>
+        <FilledButton onClick={handleCreateColumn}>Create</FilledButton>
       </DialogActions>
     </Dialog>
   )

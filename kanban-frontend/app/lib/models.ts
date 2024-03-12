@@ -36,9 +36,7 @@ export type ColumnPreview = {
 }
 
 export type ColumnBoardContext = Omit<Column, 'board_id'> & {
-  tasks: (Pick<Task, 'title' | 'id'> & {
-    subtasks: Pick<Subtask, 'title' | 'id' | 'status'>[]
-  })[]
+  tasks: TaskBoardContext[]
 }
 
 export type Task = {
@@ -48,6 +46,10 @@ export type Task = {
   column: number
   created_at: string
   last_modified: string
+}
+
+export type TaskBoardContext = Pick<Task, 'id' | 'title' | 'column'> & {
+  subtasks: Pick<Subtask, 'id' | 'title' | 'status'>[]
 }
 
 export type DetailedTask = Task & {

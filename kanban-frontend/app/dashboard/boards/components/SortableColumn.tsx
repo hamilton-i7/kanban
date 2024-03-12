@@ -1,7 +1,7 @@
 import React from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { BoxProps, Typography, styled } from '@mui/material'
+import { Typography, styled } from '@mui/material'
 import { Box, Stack } from '@mui/system'
 import { ColumnBoardContext } from '@/app/lib/models'
 import { COLUMN_TYPE } from '@/app/lib/constants'
@@ -15,7 +15,10 @@ type ColumnProps = SortableColumnProps
 
 export const ColumnWrapper = styled(Box)(({ theme }) => ({
   '&.MuiBox-root': {
-    minWidth: theme.spacing(70),
+    width: theme.spacing(78),
+    borderRadius: theme.spacing(1.5),
+    padding: theme.spacing(4),
+    backgroundColor: theme.palette.divider,
   },
 }))
 
@@ -62,14 +65,12 @@ export default function SortableColumn({
   if (isDragging) {
     return (
       <ColumnWrapper
+        ref={setNodeRef}
         sx={{
           opacity: 0.25,
           transition,
           transform: CSS.Transform.toString(transform),
         }}
-        ref={setNodeRef}
-        {...attributes}
-        {...listeners}
       >
         <Column column={column}>{children}</Column>
       </ColumnWrapper>

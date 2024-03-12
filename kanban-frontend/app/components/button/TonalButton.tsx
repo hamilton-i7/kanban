@@ -1,26 +1,11 @@
-import React from 'react'
-import BaseButton, { BaseButtonProps } from './BaseButton'
-import { alpha } from '@mui/material'
+import BaseButton from './BaseButton'
+import { alpha, styled } from '@mui/material'
 
-type TonalButtonProps = BaseButtonProps
+const TonalButton = styled(BaseButton)(({ theme }) => ({
+  color: 'primary.main',
+  '&.MuiButtonBase-root': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  },
+}))
 
-export default function TonalButton({
-  label,
-  onClick,
-  ...props
-}: TonalButtonProps) {
-  return (
-    <BaseButton
-      label={label}
-      variant="contained"
-      onClick={onClick}
-      sx={{
-        color: 'primary.main',
-        '&.MuiButtonBase-root': {
-          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-        },
-      }}
-      {...props}
-    />
-  )
-}
+export default TonalButton

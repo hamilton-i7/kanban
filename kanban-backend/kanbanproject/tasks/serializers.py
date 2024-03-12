@@ -162,7 +162,7 @@ class TaskSummarySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Task
-        fields = ['id', 'title', 'subtasks']
+        fields = ['id', 'title', 'column', 'subtasks']
 
     def get_subtasks(self, task):
         subtasks = Subtask.objects.filter(task=task).order_by('position')

@@ -6,5 +6,8 @@ export const COLUMN_TYPE = 'COLUMN'
 export const COLUMN_FIELD_TYPE = 'COLUMN_FIELD'
 
 export const SINGLE_TASK_KEY = 'task'
+export const TASK_TYPE = 'TASK'
+
+export const SUBTASK_TYPE = 'SUBTASK'
 
 export const REORDER_TIMEOUT_MILLIS = 2_000

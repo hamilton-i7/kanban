@@ -63,13 +63,16 @@ export default function DeleteBoardDialog({
       </DialogContent>
       <DialogActions>
         <FilledButton
-          label="Delete"
           onClick={handleDeleteBoard}
           sx={{
             bgcolor: 'error.main',
           }}
-        />
-        <TonalButton label="Cancel" autoFocus onClick={onClose} />
+        >
+          Delete
+        </FilledButton>
+        <TonalButton autoFocus onClick={onClose}>
+          Cancel
+        </TonalButton>
       </DialogActions>
     </Dialog>
   )

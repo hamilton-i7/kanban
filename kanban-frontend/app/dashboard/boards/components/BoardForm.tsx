@@ -151,11 +151,10 @@ export default function BoardForm({
         )}
       </DialogContent>
       <DialogActions>
-        <TonalButton label="Add new column" onClick={onColumnAdd} />
-        <FilledButton
-          label={variant === 'create' ? 'Create new board' : 'Save changes'}
-          onClick={onConfirmClick}
-        />
+        <TonalButton onClick={onColumnAdd}>Add new column</TonalButton>
+        <FilledButton onClick={onConfirmClick}>
+          {variant === 'create' ? 'Create new board' : 'Save changes'}
+        </FilledButton>
       </DialogActions>
     </Dialog>
   )

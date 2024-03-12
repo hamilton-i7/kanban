@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import EmptyBoard from './EmptyBoard'
-import TaskCard from '@/app/dashboard/tasks/components/TaskCard'
+import SortableTaskCard, {
+  TaskCard,
+  TaskCardWrapper,
+} from '@/app/dashboard/tasks/components/SortableTaskCard'
 import {
   Box,
   Card,
@@ -20,7 +23,7 @@ import DeleteBoardDialog from './DeleteBoardDialog'
 import AddColumnDialog from './AddColumnDialog'
 import {
   DndContext,
-  closestCenter,
+  closestCorners,
   useDroppable,
   useSensors,
   useSensor,
@@ -29,17 +32,20 @@ import {
   DragStartEvent,
   DragEndEvent,
   MouseSensor,
+  DragOverEvent,
+  DragCancelEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import SortableColumn, { Column, ColumnWrapper } from './SortableColumn'
-import { ColumnBoardContext } from '@/app/lib/models'
-import { COLUMN_TYPE, REORDER_TIMEOUT_MILLIS } from '@/app/lib/constants'
+import { ColumnBoardContext, TaskBoardContext } from '@/app/lib/models'
+import { COLUMN_TYPE, TASK_TYPE } from '@/app/lib/constants'
 import { createPortal } from 'react-dom'
-import { useDebounce } from '@uidotdev/usehooks'
+import TextButton from '@/app/components/button/TextButton'
 
 type BoardProps = {
   boardId?: number
@@ -57,7 +63,19 @@ export default function Board({ boardId }: BoardProps) {
     boardId ?? +params.boardId
   )
   const { setNodeRef } = useDroppable({ id: boardId ?? +params.boardId })
-  const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor))
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    })
+  )
 
   const [openDeleteBoardDialog, setOpenDeleteBoardDialog] = useState(false)
   const [openAddColumnDialog, setOpenAddColumnDialog] = useState(false)
@@ -65,8 +83,11 @@ export default function Board({ boardId }: BoardProps) {
     null
   )
   const [columns, setColumns] = useState<ColumnBoardContext[]>([])
+  const [tempColumnId, setTempColumnId] = useState(0)
 
-  const debouncedColumns = useDebounce(columns, REORDER_TIMEOUT_MILLIS)
+  const [activeTask, setActiveTask] = useState<TaskBoardContext | null>(null)
+  const [tasks, setTasks] = useState<{ [key: string]: TaskBoardContext[] }>({})
+  const [activeTaskInitialPos, setActiveTaskInitialPosition] = useState(-1)
 
   const handleOpenDeleteBoardDialog = () => {
     setOpenDeleteBoardDialog(true)
@@ -85,39 +106,171 @@ export default function Board({ boardId }: BoardProps) {
   }
 
   const handleDragStart = (event: DragStartEvent) => {
-    if (event.active.data.current?.type !== COLUMN_TYPE) return
-    setActiveColumn(event.active.data.current.column)
+    const { active } = event
+    if (active.data.current?.type === COLUMN_TYPE) {
+      setActiveColumn(active.data.current.column)
+      return
+    }
+
+    if (active.data.current?.type === TASK_TYPE) {
+      setActiveTask(active.data.current.task)
+      setActiveTaskInitialPosition(
+        tasks[active.data.current.task.column].findIndex(
+          ({ id }) => id.toString() === active.id
+        )
+      )
+      setTempColumnId(active.data.current.task.column)
+      return
+    }
+  }
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event
+
+    if (!over) return
+    if (active.id === over.id) return
+    if (active.data.current?.type !== TASK_TYPE) return
+
+    if (over.data.current?.type === TASK_TYPE) {
+      const activeTaskColumn = active.data.current?.task?.column
+      const overTaskColumn = over.data.current?.task?.column
+
+      if (activeTaskColumn === overTaskColumn) return
+
+      setTasks((tasks) => {
+        const overIndex = tasks[overTaskColumn].findIndex(
+          ({ id }) => id.toString() === over.id
+        )
+
+        return {
+          ...tasks,
+          [activeTaskColumn]: tasks[activeTaskColumn].filter(
+            (task) => task.id.toString() !== active.id
+          ),
+          [overTaskColumn]: [
+            ...tasks[overTaskColumn].slice(0, overIndex),
+            {
+              ...active.data.current?.task,
+              column: over.data.current?.task?.column,
+            },
+            ...tasks[overTaskColumn].slice(overIndex),
+          ],
+        }
+      })
+      return
+    }
+    if (over.data.current?.type !== COLUMN_TYPE) return
+
+    // Dropping over an empty column
+    setTasks((tasks) => ({
+      ...tasks,
+      [active.data.current?.task?.column]: tasks[
+        active.data.current?.task?.column
+      ].filter((task) => task.id.toString() !== active.id),
+      [+over.id]: [
+        {
+          ...active.data.current?.task,
+          column: +over.id,
+        },
+      ],
+    }))
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveColumn(null)
+    setActiveTask(null)
+    setActiveTaskInitialPosition(-1)
+    setTempColumnId(0)
 
     const { active, over } = event
+
     if (!over) return
-
     if (active.id === over.id) return
+    if (
+      active.data.current?.type === COLUMN_TYPE &&
+      over.data.current?.type === COLUMN_TYPE
+    ) {
+      const activeColumnIndex = columns.findIndex(
+        ({ id }) => id.toString() === active.id
+      )
+      const overColumnIndex = columns.findIndex(
+        ({ id }) => id.toString() === over.id
+      )
+      const updatedColumns = arrayMove(
+        columns,
+        activeColumnIndex,
+        overColumnIndex
+      )
 
-    const activeColumnIndex = columns.findIndex(
-      ({ id }) => id.toString() === active.id
-    )
-    const overColumnIndex = columns.findIndex(
-      ({ id }) => id.toString() === over.id
-    )
-    const updatedColumns = arrayMove(
-      columns,
-      activeColumnIndex,
-      overColumnIndex
-    )
+      setColumns(updatedColumns)
+      reorderColumns(updatedColumns)
+    }
 
-    setColumns(updatedColumns)
-    reorderColumns(updatedColumns)
+    if (
+      active.data.current?.type === TASK_TYPE &&
+      over.data.current?.type === TASK_TYPE
+    ) {
+      const activeTaskColumn = active.data.current?.task?.column
+      const overTaskColumn = over.data.current?.task?.column
+
+      if (activeTaskColumn !== overTaskColumn) return
+
+      setTasks((tasks) => {
+        const activeIndex = tasks[activeTaskColumn].findIndex(
+          ({ id }) => id.toString() === active.id
+        )
+        const overIndex = tasks[overTaskColumn].findIndex(
+          ({ id }) => id.toString() === over.id
+        )
+        return {
+          ...tasks,
+          [overTaskColumn]: arrayMove(
+            tasks[overTaskColumn],
+            activeIndex,
+            overIndex
+          ),
+        }
+      })
+    }
+  }
+
+  const handleDragCancel = (event: DragCancelEvent) => {
+    const { active } = event
+    setActiveColumn(null)
+    setActiveTask(null)
+
+    if (active.data.current?.type !== TASK_TYPE) return
+    if (active.data.current.task.column === tempColumnId) return
+
+    setTasks((tasks) => ({
+      ...tasks,
+      [tempColumnId]: [
+        ...tasks[tempColumnId].slice(0, activeTaskInitialPos),
+        {
+          ...active.data.current?.task,
+          column: tempColumnId,
+        },
+        ...tasks[tempColumnId].slice(activeTaskInitialPos),
+      ],
+      [active.data.current!.task.column]: tasks[
+        active.data.current!.task.column
+      ].filter((task) => task.id.toString() !== active.id),
+    }))
+    setTempColumnId(0)
+    setActiveTaskInitialPosition(-1)
   }
 
   useEffect(() => {
     if (!board) return
     setColumns(board.columns)
+    // setTasks(board.columns.flatMap(({ tasks }) => tasks))
+    setTasks(
+      board.columns.reduce(
+        (acc, curr) => ({ ...acc, [curr.id]: curr.tasks }),
+        {}
+      )
+    )
   }, [board])
-
   // TODO: Reduce amount of api calls when sorting columns
   // useEffect(() => {
   //   if (!board) return
@@ -153,15 +306,17 @@ export default function Board({ boardId }: BoardProps) {
         {columns.length === 0 && <EmptyBoard />}
         {columns.length > 0 && (
           <DndContext
-            collisionDetection={closestCenter}
+            collisionDetection={closestCorners}
             sensors={sensors}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+            onDragOver={handleDragOver}
           >
             <Stack
               direction="row"
               component="main"
-              spacing={6}
+              spacing={4}
               ref={setNodeRef}
               sx={{
                 p: (theme) => theme.spacing(6, 4),
@@ -171,23 +326,31 @@ export default function Board({ boardId }: BoardProps) {
               }}
             >
               <SortableContext
-                items={columns.map((column) => column.id.toString())}
+                items={columns.map(({ id }) => id.toString())}
                 strategy={horizontalListSortingStrategy}
               >
                 {columns.map((column) => (
                   <SortableColumn key={column.id} column={column}>
-                    {column.tasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        id={task.id}
-                        title={task.title}
-                        totalSubtasks={task.subtasks.length}
-                        completedSubtasks={
-                          task.subtasks.filter((subtask) => subtask.status)
-                            .length
-                        }
-                      />
-                    ))}
+                    {tasks[column.id].length > 0 && (
+                      <SortableContext
+                        items={tasks[column.id].map(({ id }) => id.toString())}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {tasks[column.id].map((task) => (
+                          <SortableTaskCard key={task.id} task={task} />
+                        ))}
+                      </SortableContext>
+                    )}
+                    <TextButton
+                      startIcon={<Add />}
+                      sx={{
+                        color: (theme) => theme.palette.grey[500],
+                        justifyContent: 'start',
+                        borderRadius: (theme) => theme.spacing(1.5),
+                      }}
+                    >
+                      Add new task
+                    </TextButton>
                   </SortableColumn>
                 ))}
               </SortableContext>
@@ -199,9 +362,6 @@ export default function Board({ boardId }: BoardProps) {
                   background: (theme) =>
                     `linear-gradient(to bottom, ${theme.palette.grey[300]}, ${alpha(theme.palette.grey[300], 0.5)})`,
                   borderRadius: (theme) => theme.spacing(1.5),
-                  '&.MuiPaper-root': {
-                    mt: (theme) => theme.spacing(9.75),
-                  },
                 }}
               >
                 <CardActionArea
@@ -236,20 +396,27 @@ export default function Board({ boardId }: BoardProps) {
                 {activeColumn ? (
                   <ColumnWrapper>
                     <Column column={activeColumn}>
-                      {activeColumn.tasks.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          id={task.id}
-                          title={task.title}
-                          totalSubtasks={task.subtasks.length}
-                          completedSubtasks={
-                            task.subtasks.filter((subtask) => subtask.status)
-                              .length
-                          }
-                        />
-                      ))}
+                      {tasks[activeColumn.id].length > 0 &&
+                        tasks[activeColumn.id].map((task) => (
+                          <SortableTaskCard key={task.id} task={task} />
+                        ))}
+                      <TextButton
+                        startIcon={<Add />}
+                        sx={{
+                          color: (theme) => theme.palette.grey[500],
+                          justifyContent: 'start',
+                          borderRadius: (theme) => theme.spacing(1.5),
+                        }}
+                      >
+                        Add new task
+                      </TextButton>
                     </Column>
                   </ColumnWrapper>
+                ) : null}
+                {activeTask ? (
+                  <TaskCardWrapper>
+                    <TaskCard task={activeTask} />
+                  </TaskCardWrapper>
                 ) : null}
               </DragOverlay>,
               document.body

@@ -1,19 +1,15 @@
 import React from 'react'
-import BaseButton, { BaseButtonProps } from './BaseButton'
-
-type FilledButtonProps = BaseButtonProps
+import BaseButton from './BaseButton'
+import { ButtonProps } from '@mui/material'
 
 export default function FilledButton({
-  label,
   onClick,
+  children,
   ...props
-}: FilledButtonProps) {
+}: ButtonProps) {
   return (
-    <BaseButton
-      label={label}
-      variant="contained"
-      onClick={onClick}
-      {...props}
-    />
+    <BaseButton variant="contained" onClick={onClick} {...props}>
+      {children}
+    </BaseButton>
   )
 }

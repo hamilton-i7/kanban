@@ -19,7 +19,7 @@ export default function EmptyBoard() {
       <Typography paragraph align="center" variant="heading-l" color="grey.500">
         This board is empty. Create a new column to get started.
       </Typography>
-      <FilledButton label="Add new column" startIcon={<Add />} />
+      <FilledButton startIcon={<Add />}>Add new column</FilledButton>
     </Stack>
   )
 }
