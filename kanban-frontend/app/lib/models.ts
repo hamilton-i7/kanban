@@ -56,6 +56,15 @@ export type DetailedTask = Task & {
   subtasks: Subtask[]
 }
 
+export type CreateTask = Pick<Task, 'title' | 'column'> & {
+  description?: string
+  subtasks?: Pick<Subtask, 'title'>[]
+}
+
+export type TaskWithSubtasks = Task & {
+  subtasks: Subtask[]
+}
+
 export type Subtask = {
   id: number
   title: string

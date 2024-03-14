@@ -7,6 +7,7 @@ import { Add, ExpandMore, MoreVert } from '@mui/icons-material'
 import SelectBoardDialog from './SelectBoardDialog'
 import BoardMenu from './BoardMenu'
 import { useGetBoard } from '../../../lib/hooks/board_hooks'
+import Link from 'next/link'
 
 type BoardTopBarProps = {
   boardId?: number
@@ -80,6 +81,8 @@ export default function BoardTopBar({
           aria-label="Add new task"
           disabled={board.columns.length === 0 ?? false}
           disableElevation
+          href={`/dashboard/boards/${board.id}/tasks/new`}
+          LinkComponent={Link}
           sx={{
             borderRadius: (theme) => theme.spacing(6),
             p: (theme) => theme.spacing(1, 2),

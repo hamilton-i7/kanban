@@ -4,21 +4,19 @@ import React, { useEffect, useState } from 'react'
 import { useEditBoard, useGetBoard } from '@/app/lib/hooks/board_hooks'
 import { Column, EditBoard } from '@/app/lib/models'
 import BoardForm from './BoardForm'
-import { usePathname, useRouter } from 'next/navigation'
+import { useParams, usePathname, useRouter } from 'next/navigation'
 import { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { COLUMN_FIELD_TYPE } from '@/app/lib/constants'
 import { arrayMove } from '@dnd-kit/sortable'
 
-type EditBoardDialogProps = {
-  boardId: number
-}
-
-export default function EditBoardDialog({ boardId }: EditBoardDialogProps) {
-  const EDIT_BOARD_PATHNAME = `/dashboard/boards/${boardId}/edit`
+export default function EditBoardDialog() {
+  const params = useParams<{ boardId: string }>()
+  const EDIT_BOARD_PATHNAME = `/dashboard/boards/${params.boardId}/edit`
   const pathname = usePathname()
   const router = useRouter()
-  const { data: board } = useGetBoard(boardId)
-  const { mutate: editBoard } = useEditBoard(boardId)
+
+  const { data: board } = useGetBoard(+params.boardId)
+  const { mutate: editBoard } = useEditBoard(+params.boardId)
 
   const [boardName, setBoardName] = useState('')
   const [columnFields, setColumnFields] = useState<
@@ -83,7 +81,7 @@ export default function EditBoardDialog({ boardId }: EditBoardDialogProps) {
   }
 
   const handleDialogClose = () => {
-    router.push(`/dashboard/boards/${boardId}`)
+    router.push(`/dashboard/boards/${+params.boardId}`)
   }
 
   const handleEditBoard = () => {

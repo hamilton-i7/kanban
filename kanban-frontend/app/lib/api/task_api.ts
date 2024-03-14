@@ -1,4 +1,9 @@
-import { DetailedBoard, DetailedTask } from '../models'
+import {
+  CreateTask,
+  DetailedBoard,
+  DetailedTask,
+  TaskWithSubtasks,
+} from '../models'
 import axiosInstance from './axiosInstance'
 
 export const getTask = async (id: number) => {
@@ -9,6 +14,14 @@ export const getTask = async (id: number) => {
 export const getBoardByTaskId = async (id: number) => {
   const response = await axiosInstance.get<DetailedBoard>(
     `/tasks/items/${id}/board/`
+  )
+  return response.data
+}
+
+export const createTask = async (task: CreateTask) => {
+  const response = await axiosInstance.post<TaskWithSubtasks>(
+    '/tasks/items/',
+    task
   )
   return response.data
 }

@@ -1,14 +1,15 @@
-import React from 'react'
-import EditBoardDialog from '@/app/dashboard/boards/components/EditBoardDialog'
+import Board from '@/app/dashboard/boards/components/Board'
+import AddTaskDialog from '@/app/dashboard/tasks/components/AddTaskDialog'
 import { getBoard } from '@/app/lib/api/board_api'
 import { SINGLE_BOARD_KEY } from '@/app/lib/constants'
 import {
-  QueryClient,
   HydrationBoundary,
+  QueryClient,
   dehydrate,
 } from '@tanstack/react-query'
+import React from 'react'
 
-export default async function EditBoardModalPage({
+export default async function CreateTaskDialogModalPage({
   params,
 }: {
   params: { boardId: string }
@@ -22,7 +23,7 @@ export default async function EditBoardModalPage({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <EditBoardDialog />
+      <AddTaskDialog />
     </HydrationBoundary>
   )
 }

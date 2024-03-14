@@ -68,7 +68,7 @@ export default function TaskDetailDialog() {
 
   const [subtasks, setSubtasks] = useState<Subtask[]>([])
   const [activeSubtask, setActiveSubtask] = useState<Subtask | null>(null)
-  const completedSubtasks = subtasks.map((subtask) => subtask.status).length
+  const completedSubtasks = subtasks.filter(({ status }) => status).length
   const totalSubtasks = subtasks.length
 
   const [selectedColumn] = useState(columnId)
@@ -221,32 +221,36 @@ export default function TaskDetailDialog() {
               {task.description}
             </Typography>
           )}
+          {subtasks.length > 0 && (
+            <>
+              <Typography
+                variant="body-m"
+                component="h3"
+                color="grey.500"
+                sx={{ mb: (theme) => theme.spacing(4) }}
+              >
+                Subtasks ({completedSubtasks} of {totalSubtasks})
+              </Typography>
+              <MenuList
+                sx={{
+                  mb: (theme) => theme.spacing(6),
+                  gap: (theme) => theme.spacing(2),
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <SortableContext
+                  items={subtasks.map(({ id }) => id.toString())}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {subtasks.map((subtask) => (
+                    <SortableSubtaskItem key={subtask.id} subtask={subtask} />
+                  ))}
+                </SortableContext>
+              </MenuList>
+            </>
+          )}
           {/* TODO: Conditionally render subtasks */}
-          <Typography
-            variant="body-m"
-            component="h3"
-            color="grey.500"
-            sx={{ mb: (theme) => theme.spacing(4) }}
-          >
-            Subtasks ({completedSubtasks} of {totalSubtasks})
-          </Typography>
-          <MenuList
-            sx={{
-              mb: (theme) => theme.spacing(6),
-              gap: (theme) => theme.spacing(2),
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <SortableContext
-              items={subtasks.map(({ id }) => id.toString())}
-              strategy={verticalListSortingStrategy}
-            >
-              {subtasks.map((subtask) => (
-                <SortableSubtaskItem key={subtask.id} subtask={subtask} />
-              ))}
-            </SortableContext>
-          </MenuList>
           <Typography
             variant="body-m"
             component="label"

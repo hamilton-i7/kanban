@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { SINGLE_BOARD_KEY, SINGLE_TASK_KEY } from '../constants'
-import { getBoardByTaskId, getTask } from '../api/task_api'
+import { createTask, getBoardByTaskId, getTask } from '../api/task_api'
+import { CreateTask } from '../models'
 
 const useGetTask = (taskId: number) => {
   return useQuery({
@@ -16,4 +17,10 @@ const useGetBoardByTask = (taskId: number) => {
   })
 }
 
-export { useGetTask, useGetBoardByTask }
+const useCreateTask = () => {
+  return useMutation({
+    mutationFn: (task: CreateTask) => createTask(task),
+  })
+}
+
+export { useGetTask, useGetBoardByTask, useCreateTask }

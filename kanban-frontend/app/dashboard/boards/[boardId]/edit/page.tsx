@@ -24,7 +24,7 @@ export default async function EditBoardPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Board />
-      <EditBoardDialog boardId={+params.boardId} />
+      <EditBoardDialog />
     </HydrationBoundary>
   )
 }

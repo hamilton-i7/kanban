@@ -84,7 +84,7 @@ export default function BoardForm({
           color="grey.500"
           sx={{ mb: (theme) => theme.spacing(2) }}
         >
-          Board name
+          Name
         </Typography>
         <TextField
           id="board-name-input"
@@ -151,8 +151,10 @@ export default function BoardForm({
         )}
       </DialogContent>
       <DialogActions>
-        <TonalButton onClick={onColumnAdd}>Add new column</TonalButton>
-        <FilledButton onClick={onConfirmClick}>
+        <TonalButton onClick={onColumnAdd} fullWidth>
+          Add new column
+        </TonalButton>
+        <FilledButton onClick={onConfirmClick} fullWidth>
           {variant === 'create' ? 'Create new board' : 'Save changes'}
         </FilledButton>
       </DialogActions>

@@ -9,5 +9,6 @@ export const SINGLE_TASK_KEY = 'task'
 export const TASK_TYPE = 'TASK'
 
 export const SUBTASK_TYPE = 'SUBTASK'
+export const SUBTASK_FIELD_TYPE = 'SUBTASK_FIELD'
 
 export const REORDER_TIMEOUT_MILLIS = 2_000

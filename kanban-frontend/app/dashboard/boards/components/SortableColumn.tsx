@@ -15,7 +15,7 @@ type ColumnProps = SortableColumnProps
 
 export const ColumnWrapper = styled(Box)(({ theme }) => ({
   '&.MuiBox-root': {
-    width: theme.spacing(78),
+    minWidth: theme.spacing(78),
     borderRadius: theme.spacing(1.5),
     padding: theme.spacing(4),
     backgroundColor: theme.palette.divider,
