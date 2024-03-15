@@ -235,7 +235,7 @@ class SubtaskListSerializer(serializers.ListSerializer):
                 if subtask is not None:
                     subtask.position = i
                     subtask.title = item.get('title', subtask.title)
-                    subtask.status = data.get('status', subtask.status)
+                    subtask.status = item.get('status', subtask.status)
                     subtask.save()
             else:
                 new_subtasks.append(Subtask(task=self.context['task'], position=i, **item))

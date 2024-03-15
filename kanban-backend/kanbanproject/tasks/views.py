@@ -167,7 +167,7 @@ def get_related_columns_by_column_id(_, id):
     except Column.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND, data={'error': COLUMN_NOT_FOUND})
     
-    columns = Column.objects.filter(board=column.board)
+    columns = Column.objects.filter(board=column.board).order_by('position')
     serializer = ColumnSerializer(columns, many=True, fields=('id', 'name'))
     return Response(serializer.data)
 

@@ -18,7 +18,11 @@ import SortableSubtaskItem, {
   SubtaskItemWrapper,
 } from './SubtaskItem'
 import { useParams, usePathname, useRouter } from 'next/navigation'
-import { useGetBoardByTask, useGetTask } from '@/app/lib/hooks/task_hooks'
+import {
+  useEditTask,
+  useGetBoardByTask,
+  useGetTask,
+} from '@/app/lib/hooks/task_hooks'
 import { useGetRelatedColumns } from '@/app/lib/hooks/column_hooks'
 import TaskMenu from './TaskMenu'
 import {
@@ -38,15 +42,19 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { Subtask } from '@/app/lib/models'
+import { EditTask, Subtask } from '@/app/lib/models'
 import { createPortal } from 'react-dom'
-import { SUBTASK_TYPE } from '@/app/lib/constants'
+import { SINGLE_BOARD_KEY, SUBTASK_TYPE } from '@/app/lib/constants'
+import { useQueryClient } from '@tanstack/react-query'
+import DeleteTaskDialog from './DeleteTaskDialog'
 
 export default function TaskDetailDialog() {
   const params = useParams<{ taskId: string }>()
   const TASK_DETAIL_PATHNAME = `/dashboard/tasks/${params.taskId}`
   const pathname = usePathname()
   const router = useRouter()
+
+  const queryClient = useQueryClient()
   const {
     isPending: isTaskPending,
     isError: isTaskError,
@@ -54,27 +62,31 @@ export default function TaskDetailDialog() {
     data: task,
   } = useGetTask(+params.taskId)
 
-  const { data: board } = useGetBoardByTask(+params.taskId)
-
-  const boardId = board?.id
-  const columnId = task?.column
+  const {
+    data: board,
+    isPending: isBoardPending,
+    isError: isBoardError,
+  } = useGetBoardByTask(+params.taskId)
+  const { mutate: editTask } = useEditTask(+params.taskId)
 
   const {
     isPending: isColumnsPending,
     isError: isColumnsError,
     error: columnsError,
     data: columns,
-  } = useGetRelatedColumns(columnId)
+  } = useGetRelatedColumns(task?.column)
 
   const [subtasks, setSubtasks] = useState<Subtask[]>([])
   const [activeSubtask, setActiveSubtask] = useState<Subtask | null>(null)
   const completedSubtasks = subtasks.filter(({ status }) => status).length
   const totalSubtasks = subtasks.length
 
-  const [selectedColumn] = useState(columnId)
+  const [selectedColumnId, setSelectedColumnId] = useState('')
 
+  const [openDialog, setOpenDialog] = useState(true)
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const openOptionsMenu = Boolean(anchorEl)
+  const [openDeleteTaskDialog, setOpenDeleteTaskDialog] = useState(false)
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -89,6 +101,31 @@ export default function TaskDetailDialog() {
       },
     })
   )
+
+  const handleSubtaskChange = (subtaskId: number) => {
+    setSubtasks((subs) => {
+      const subtaskToUpdateIndex = subs.findIndex(({ id }) => id === subtaskId)
+      const subtaskToUpdate = subs[subtaskToUpdateIndex]
+      return subs.toSpliced(subtaskToUpdateIndex, 1, {
+        ...subtaskToUpdate,
+        status: !subtaskToUpdate.status,
+      })
+    })
+  }
+
+  const handleColumnChange = (columnId: string) => {
+    setSelectedColumnId(columnId)
+  }
+
+  const handleOpenDeleteTaskDialog = () => {
+    setOpenDeleteTaskDialog(true)
+    setOpenDialog(false)
+  }
+
+  const handleCloseDeleteTaskDialog = () => {
+    setOpenDeleteTaskDialog(false)
+    router.push(`/dashboard/boards/${board!.id}`)
+  }
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event
@@ -128,29 +165,44 @@ export default function TaskDetailDialog() {
   }
 
   const handleDialogClose = () => {
-    router.push(`/dashboard/boards/${boardId}`)
+    const updatedTask: EditTask = {
+      column: +selectedColumnId,
+      subtasks: subtasks.map(({ id, status }) => ({ id, status })),
+    }
+    editTask(updatedTask, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: [SINGLE_BOARD_KEY, board!.id],
+        })
+      },
+      onError: (error) => {
+        console.error(error)
+      },
+    })
+
+    router.push(`/dashboard/boards/${board!.id}`)
   }
 
   useEffect(() => {
     if (!task) return
-    setSubtasks(task.subtasks)
-  }, [task])
+    if (pathname !== TASK_DETAIL_PATHNAME) return
 
-  useEffect(() => {
-    if (pathname === TASK_DETAIL_PATHNAME) {
-      // Reset states
-    }
-  }, [pathname, TASK_DETAIL_PATHNAME])
+    // Reset states
+    setOpenDialog(true)
+    setSubtasks(task.subtasks)
+    setSelectedColumnId(task.column.toString())
+    setAnchorEl(null)
+  }, [task, pathname, TASK_DETAIL_PATHNAME])
 
   if (pathname !== TASK_DETAIL_PATHNAME) {
     return null
   }
 
-  if (isTaskPending || isColumnsPending) {
+  if (isTaskPending || isColumnsPending || isBoardPending) {
     return <div>Loading...</div>
   }
 
-  if (isTaskError || isColumnsError) {
+  if (isTaskError || isColumnsError || isBoardError) {
     return (
       <>
         {taskError && <div>Error: {taskError.message}</div>}
@@ -159,8 +211,19 @@ export default function TaskDetailDialog() {
     )
   }
 
+  if (openDeleteTaskDialog) {
+    return (
+      <DeleteTaskDialog
+        open
+        onClose={handleCloseDeleteTaskDialog}
+        task={task}
+        boardId={board.id}
+      />
+    )
+  }
+
   return (
-    <Dialog open onClose={handleDialogClose}>
+    <Dialog open={openDialog} onClose={handleDialogClose}>
       <DndContext
         collisionDetection={closestCenter}
         modifiers={[restrictToVerticalAxis]}
@@ -200,7 +263,11 @@ export default function TaskDetailDialog() {
           <TaskMenu
             anchorEl={anchorEl}
             open={openOptionsMenu}
+            boardId={board.id}
+            taskId={task.id}
             onClose={handleCloseOptionsMenu}
+            onEditTaskClick={handleCloseOptionsMenu}
+            onDeleteTaskClick={handleOpenDeleteTaskDialog}
             MenuListProps={{
               'aria-labelledby': 'task-menu-button',
             }}
@@ -244,13 +311,16 @@ export default function TaskDetailDialog() {
                   strategy={verticalListSortingStrategy}
                 >
                   {subtasks.map((subtask) => (
-                    <SortableSubtaskItem key={subtask.id} subtask={subtask} />
+                    <SortableSubtaskItem
+                      key={subtask.id}
+                      subtask={subtask}
+                      onStatusChange={handleSubtaskChange}
+                    />
                   ))}
                 </SortableContext>
               </MenuList>
             </>
           )}
-          {/* TODO: Conditionally render subtasks */}
           <Typography
             variant="body-m"
             component="label"
@@ -270,7 +340,10 @@ export default function TaskDetailDialog() {
             size="small"
             fullWidth
             select
-            value={selectedColumn ?? ''}
+            value={selectedColumnId}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              handleColumnChange(event.target.value)
+            }
             InputProps={{
               sx: { typography: 'body-l', color: 'common.black' },
             }}

@@ -1,31 +1,29 @@
 'use client'
 
-import { SUBTASK_FIELD_TYPE } from '@/app/lib/constants'
-import { useCreateTask } from '@/app/lib/hooks/task_hooks'
-import { CreateTask, Subtask } from '@/app/lib/models'
-import { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
-import { arrayMove } from '@dnd-kit/sortable'
-import { useParams, usePathname, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import TaskForm from './TaskForm'
+import { useParams, usePathname, useRouter } from 'next/navigation'
+import { useEditTask, useGetTask } from '@/app/lib/hooks/task_hooks'
 import { useGetRelatedColumns } from '@/app/lib/hooks/column_hooks'
-import { useGetBoard } from '@/app/lib/hooks/board_hooks'
+import { SUBTASK_FIELD_TYPE } from '@/app/lib/constants'
+import { Subtask, EditTask } from '@/app/lib/models'
+import { DragStartEvent, DragEndEvent } from '@dnd-kit/core'
+import { arrayMove } from '@dnd-kit/sortable'
 
-export default function AddTaskDialog() {
-  const params = useParams<{ boardId: string }>()
-  const ADD_TASK_PATHNAME = `/dashboard/boards/${params.boardId}/tasks/new`
+export default function EditTaskDialog() {
+  const params = useParams<{ boardId: string; taskId: string }>()
+  const EDIT_TASK_PATHNAME = `/dashboard/boards/${params.boardId}/tasks/${params.taskId}/edit`
   const pathname = usePathname()
   const router = useRouter()
 
-  const { mutate: createTask } = useCreateTask()
-
-  const { data: board } = useGetBoard(+params.boardId)
+  const { data: task } = useGetTask(+params.taskId)
+  const { mutate: editTask } = useEditTask(+params.taskId)
   const {
     isPending: isColumnsPending,
     isError: isColumnsError,
     error: columnsError,
     data: columns,
-  } = useGetRelatedColumns(board?.columns[0].id)
+  } = useGetRelatedColumns(task?.column)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -103,14 +101,20 @@ export default function AddTaskDialog() {
     router.push(`/dashboard/boards/${params.boardId}`)
   }
 
-  const handleCreateTask = () => {
-    const task: CreateTask = {
+  const handleEditTask = () => {
+    const updatedTask: EditTask = {
       title,
       description,
       column: +selectedColumnId,
-      subtasks: subtaskFields.map(({ title }) => ({ title })),
+      subtasks: subtaskFields.map(({ id, title }) => {
+        const sub = task!.subtasks.find((s) => s.id === id)
+        if (sub) {
+          return { id, title }
+        }
+        return { title }
+      }),
     }
-    createTask(task, {
+    editTask(updatedTask, {
       onSuccess: () => {
         router.push(`/dashboard/boards/${params.boardId}`)
       },
@@ -121,11 +125,21 @@ export default function AddTaskDialog() {
   }
 
   useEffect(() => {
-    if (!board) return
-    setSelectedColumnId(board.columns[0].id.toString())
-  }, [board])
+    if (!task) return
+    setSelectedColumnId(task.column.toString())
+  }, [task])
 
-  if (pathname !== ADD_TASK_PATHNAME) {
+  useEffect(() => {
+    if (pathname !== EDIT_TASK_PATHNAME) return
+    if (!task) return
+    setTitle(task.title)
+    setDescription(task.description)
+    setSubtaskFields(task.subtasks)
+    setSelectedColumnId(task.column.toString())
+    setTempId(Math.max(...task.subtasks.map(({ id }) => id)) + 1)
+  }, [pathname, EDIT_TASK_PATHNAME, task])
+
+  if (pathname !== EDIT_TASK_PATHNAME) {
     return null
   }
 
@@ -140,6 +154,7 @@ export default function AddTaskDialog() {
   return (
     <TaskForm
       open
+      variant="edit"
       onClose={handleDialogClose}
       title={title}
       description={description}
@@ -153,7 +168,7 @@ export default function AddTaskDialog() {
       onSubtaskAdd={handleAddSubtask}
       onSubtaskUpdate={handleUpdateSubtask}
       onSubtaskDelete={handleDeleteSubtask}
-      onConfirmClick={handleCreateTask}
+      onConfirmClick={handleEditTask}
       onSubtaskFieldDragStart={handleDragStart}
       onSubtaskFieldDragEnd={handleDragEnd}
     />

@@ -88,9 +88,9 @@ export default function EditBoardDialog() {
     const updatedBoard: EditBoard = {
       name: boardName,
       columns: columnFields.map(({ id, name }) => {
-        const col = board?.columns.find((c) => c.id === id)
+        const col = board!.columns.find((c) => c.id === id)
         if (col) {
-          return { id: col.id, name }
+          return { id, name }
         }
         return { name }
       }),

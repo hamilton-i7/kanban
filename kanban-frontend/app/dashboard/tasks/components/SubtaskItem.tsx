@@ -1,13 +1,5 @@
 import React from 'react'
-import {
-  CardActionArea,
-  CardContent,
-  Checkbox,
-  MenuItem,
-  Typography,
-  alpha,
-  styled,
-} from '@mui/material'
+import { Checkbox, MenuItem, Typography, alpha, styled } from '@mui/material'
 import { Subtask } from '@/app/lib/models'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -24,16 +16,19 @@ export const SubtaskItemWrapper = styled(MenuItem)(({ theme }) => ({
 
 type SubtaskItemProps = {
   subtask: Subtask
-  onStatusChange?: () => void
+  onStatusChange?: (subtaskId: number) => void
 }
 
-export function SubtaskItem({ subtask, onStatusChange }: SubtaskItemProps) {
+export function SubtaskItem({
+  subtask,
+  onStatusChange = () => {},
+}: SubtaskItemProps) {
   return (
     <>
       <Checkbox
         checked={subtask.status}
         onClick={(e) => e.stopPropagation()}
-        onChange={onStatusChange}
+        onChange={() => onStatusChange(subtask.id)}
         disableRipple
         inputProps={{
           'aria-label': subtask.status
@@ -60,7 +55,7 @@ export function SubtaskItem({ subtask, onStatusChange }: SubtaskItemProps) {
 
 export default function SortableSubtaskItem({
   subtask,
-  onStatusChange,
+  onStatusChange = () => {},
 }: SubtaskItemProps) {
   const {
     setNodeRef,
@@ -96,7 +91,7 @@ export default function SortableSubtaskItem({
   return (
     <SubtaskItemWrapper
       disableGutters
-      onClick={onStatusChange}
+      onClick={() => onStatusChange(subtask.id)}
       ref={setNodeRef}
       {...attributes}
       {...listeners}
@@ -106,7 +101,7 @@ export default function SortableSubtaskItem({
         transform: CSS.Transform.toString(transform),
       }}
     >
-      <SubtaskItem subtask={subtask} onStatusChange={onStatusChange} />{' '}
+      <SubtaskItem subtask={subtask} onStatusChange={onStatusChange} />
     </SubtaskItemWrapper>
   )
 }

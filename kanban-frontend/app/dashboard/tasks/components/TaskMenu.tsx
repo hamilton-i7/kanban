@@ -1,8 +1,17 @@
 import React from 'react'
-import { MenuItem, ListItemText, Typography, MenuProps } from '@mui/material'
+import {
+  MenuItem,
+  ListItemText,
+  Typography,
+  MenuProps,
+  ListItemButton,
+} from '@mui/material'
 import Menu from '@/app/components/Menu'
+import Link from 'next/link'
 
 type TaskMenuProps = MenuProps & {
+  boardId: number
+  taskId: number
   onEditTaskClick?: () => void
   onDeleteTaskClick?: () => void
 }
@@ -10,6 +19,8 @@ type TaskMenuProps = MenuProps & {
 export default function TaskMenu({
   anchorEl,
   open,
+  boardId,
+  taskId,
   onClose,
   onEditTaskClick,
   onDeleteTaskClick,
@@ -35,13 +46,18 @@ export default function TaskMenu({
       }}
       {...props}
     >
-      <MenuItem onClick={onEditTaskClick}>
-        <ListItemText
-          disableTypography
-          sx={{ typography: 'body-l', color: 'grey.500' }}
+      <MenuItem onClick={onEditTaskClick} disableGutters>
+        <ListItemButton
+          LinkComponent={Link}
+          href={`/dashboard/boards/${boardId}/tasks/${taskId}/edit`}
         >
-          Edit task
-        </ListItemText>
+          <ListItemText
+            disableTypography
+            sx={{ typography: 'body-l', color: 'grey.500' }}
+          >
+            Edit task
+          </ListItemText>
+        </ListItemButton>
       </MenuItem>
       <MenuItem onClick={onDeleteTaskClick}>
         <ListItemText

@@ -61,6 +61,12 @@ export type CreateTask = Pick<Task, 'title' | 'column'> & {
   subtasks?: Pick<Subtask, 'title'>[]
 }
 
+export type EditTask = Partial<
+  Pick<Task, 'title' | 'description' | 'column'>
+> & {
+  subtasks?: Partial<Pick<Subtask, 'id' | 'title' | 'status'>>[]
+}
+
 export type TaskWithSubtasks = Task & {
   subtasks: Subtask[]
 }

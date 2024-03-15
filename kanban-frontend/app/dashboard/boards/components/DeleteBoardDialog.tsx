@@ -24,7 +24,7 @@ export default function DeleteBoardDialog({
   board,
 }: DeleteBoardDialogProps) {
   const router = useRouter()
-  const { isPending, mutate: deleteBoard } = useDeleteBoard()
+  const { mutate: deleteBoard } = useDeleteBoard()
 
   const handleDeleteBoard = () => {
     deleteBoard(board.id, {
@@ -64,13 +64,14 @@ export default function DeleteBoardDialog({
       <DialogActions>
         <FilledButton
           onClick={handleDeleteBoard}
+          fullWidth
           sx={{
             bgcolor: 'error.main',
           }}
         >
           Delete
         </FilledButton>
-        <TonalButton autoFocus onClick={onClose}>
+        <TonalButton autoFocus onClick={onClose} fullWidth>
           Cancel
         </TonalButton>
       </DialogActions>
